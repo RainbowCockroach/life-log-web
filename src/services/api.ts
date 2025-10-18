@@ -253,6 +253,7 @@ export interface Tag {
   name: string;
   searchHint: string;
   type: string;
+  lastUsed?: string;
   config: {
     backgroundColor?: string;
     textColor?: string;
