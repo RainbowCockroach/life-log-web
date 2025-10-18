@@ -1,5 +1,5 @@
 // API service for markdown content operations
-import { getApiKey } from '../utils/apiKeyStorage';
+import { getApiKey, getBaseUrl } from '../utils/apiKeyStorage';
 import { API_CONFIG } from '../config/constants';
 
 /**
@@ -8,6 +8,14 @@ import { API_CONFIG } from '../config/constants';
  */
 function getStoredApiKey(): string {
   return getApiKey() || API_CONFIG.API_KEY;
+}
+
+/**
+ * Gets the base URL from cookie storage, falling back to the configured base URL
+ * @returns The base URL
+ */
+function getStoredBaseUrl(): string {
+  return getBaseUrl() || API_CONFIG.BASE_URL;
 }
 
 export interface Entry {
@@ -63,7 +71,7 @@ export interface SignedUrlResponse {
 export async function saveContent(
   request: SaveContentRequest
 ): Promise<SaveContentResponse> {
-  const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}`;
+  const apiUrl = `${getStoredBaseUrl()}${API_CONFIG.ENDPOINTS.ENTRIES}`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -99,7 +107,7 @@ export async function saveContent(
  * @returns Promise with upload response
  */
 export async function uploadImage(file: File): Promise<UploadImageResponse> {
-  const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.MEDIA_UPLOAD}`;
+  const apiUrl = `${getStoredBaseUrl()}${API_CONFIG.ENDPOINTS.MEDIA_UPLOAD}`;
 
   try {
     // Prepare FormData
@@ -122,7 +130,7 @@ export async function uploadImage(file: File): Promise<UploadImageResponse> {
     const media = await response.json();
     return {
       success: true,
-      url: `${API_CONFIG.BASE_URL}${media.url}`, // Use signed URL from backend
+      url: `${getStoredBaseUrl()}${media.url}`, // Use signed URL from backend
       path: media.path,
       id: media.id,
       filename: media.filename,
@@ -155,7 +163,7 @@ export async function getSignedUrl(
   filename: string,
   expiryMs?: number
 ): Promise<SignedUrlResponse> {
-  const apiUrl = `${API_CONFIG.BASE_URL}/api/media/sign`;
+  const apiUrl = `${getStoredBaseUrl()}/api/media/sign`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -211,7 +219,7 @@ export async function fetchEntries(
   page: number = 1,
   pageSize: number = 10
 ): Promise<FetchEntriesResponse> {
-  const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}`;
+  const apiUrl = `${getStoredBaseUrl()}${API_CONFIG.ENDPOINTS.ENTRIES}`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -274,7 +282,7 @@ export async function searchTagSuggestions(query: string, type?: string): Promis
     return [];
   }
 
-  let apiUrl = `${API_CONFIG.BASE_URL}/api/tags/suggestions/search?q=${encodeURIComponent(query)}`;
+  let apiUrl = `${getStoredBaseUrl()}/api/tags/suggestions/search?q=${encodeURIComponent(query)}`;
   if (type) {
     apiUrl += `&type=${encodeURIComponent(type)}`;
   }
@@ -316,7 +324,7 @@ export interface CreateTagRequest {
  * @returns Promise with created tag
  */
 export async function createTag(tag: CreateTagRequest): Promise<Tag> {
-  const apiUrl = `${API_CONFIG.BASE_URL}/api/tags`;
+  const apiUrl = `${getStoredBaseUrl()}/api/tags`;
 
   try {
     const response = await fetch(apiUrl, {

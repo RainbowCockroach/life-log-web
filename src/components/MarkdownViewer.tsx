@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
 import { getSignedUrls, type SignedUrlResponse } from '../services/api';
+import { getBaseUrl } from '../utils/apiKeyStorage';
 import { API_CONFIG } from '../config/constants';
 
 interface MarkdownViewerProps {
@@ -43,13 +44,14 @@ export default function MarkdownViewer({ content, mediaPaths = [] }: MarkdownVie
       if (allFilenames.length === 0) return;
 
       // Filter out filenames we already have valid URLs for
+      const baseUrl = getBaseUrl() || API_CONFIG.BASE_URL;
       const missingFilenames = allFilenames.filter((filename) => {
         const existingUrl = imageUrlMap.get(filename);
         if (!existingUrl) return true;
 
         // Check if URL has expired by parsing the expires query param
         try {
-          const url = new URL(existingUrl, API_CONFIG.BASE_URL);
+          const url = new URL(existingUrl, baseUrl);
           const expires = parseInt(url.searchParams.get('expires') || '0');
           return Date.now() > expires - 60000; // Refresh if less than 1 minute left
         } catch {
@@ -63,7 +65,7 @@ export default function MarkdownViewer({ content, mediaPaths = [] }: MarkdownVie
         const signedUrls: SignedUrlResponse[] = await getSignedUrls(missingFilenames);
         const newMap = new Map(imageUrlMap);
         signedUrls.forEach((result) => {
-          newMap.set(result.filename, `${API_CONFIG.BASE_URL}${result.url}`);
+          newMap.set(result.filename, `${baseUrl}${result.url}`);
         });
         setImageUrlMap(newMap);
       } catch (error) {

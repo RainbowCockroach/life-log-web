@@ -3,6 +3,7 @@ import MarkdownEditor from './MarkdownEditor';
 import TagAutocomplete from './TagAutocomplete';
 import { saveContent, uploadImages, getSignedUrls, type Tag } from '../services/api';
 import { processImages } from '../utils/imageUtils';
+import { getBaseUrl } from '../utils/apiKeyStorage';
 import { API_CONFIG } from '../config/constants';
 
 export default function Editor() {
@@ -38,8 +39,9 @@ export default function Editor() {
 
       // Store signed URLs in the map for immediate preview
       const newMap = new Map(imageUrlMap);
+      const baseUrl = getBaseUrl() || API_CONFIG.BASE_URL;
       uploadResults.forEach((result) => {
-        newMap.set(result.filename || result.path, `${API_CONFIG.BASE_URL}${result.url}`);
+        newMap.set(result.filename || result.path, `${baseUrl}${result.url}`);
       });
       setImageUrlMap(newMap);
 
@@ -93,13 +95,14 @@ export default function Editor() {
       if (filenames.length === 0) return;
 
       // Filter out filenames we already have valid URLs for
+      const baseUrl = getBaseUrl() || API_CONFIG.BASE_URL;
       const missingFilenames = filenames.filter((filename) => {
         const existingUrl = imageUrlMap.get(filename);
         if (!existingUrl) return true;
 
         // Check if URL has expired by parsing the expires query param
         try {
-          const url = new URL(existingUrl, API_CONFIG.BASE_URL);
+          const url = new URL(existingUrl, baseUrl);
           const expires = parseInt(url.searchParams.get('expires') || '0');
           return Date.now() > expires - 60000; // Refresh if less than 1 minute left
         } catch {
@@ -113,7 +116,7 @@ export default function Editor() {
         const signedUrls = await getSignedUrls(missingFilenames);
         const newMap = new Map(imageUrlMap);
         signedUrls.forEach((result) => {
-          newMap.set(result.filename, `${API_CONFIG.BASE_URL}${result.url}`);
+          newMap.set(result.filename, `${baseUrl}${result.url}`);
         });
         setImageUrlMap(newMap);
       } catch (error) {
