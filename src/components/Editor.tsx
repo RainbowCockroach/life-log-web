@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import MarkdownEditor from './MarkdownEditor';
-import { saveContent, uploadImages, getSignedUrls } from '../services/api';
+import Autocomplete, { type AutocompleteOption } from './Autocomplete';
+import TagAutocomplete from './TagAutocomplete';
+import { saveContent, uploadImages, getSignedUrls, fetchLocationSuggestions, type Tag } from '../services/api';
 import { processImages } from '../utils/imageUtils';
 import { API_CONFIG } from '../config/constants';
 
@@ -10,6 +12,8 @@ export default function Editor() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [uploadedImagePaths, setUploadedImagePaths] = useState<string[]>([]);
   const [content, setContent] = useState('');
+  const [location, setLocation] = useState('');
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [imageUrlMap, setImageUrlMap] = useState<Map<string, string>>(new Map());
 
   const handleImageUpload = async (files: File[]): Promise<string[]> => {
@@ -140,6 +144,26 @@ export default function Editor() {
     return signedUrl || url;
   }, [imageUrlMap]);
 
+  const fetchLocationSuggestionsWrapper = useCallback(async (query: string): Promise<AutocompleteOption[]> => {
+    try {
+      const suggestions = await fetchLocationSuggestions(20);
+
+      // Filter based on query if provided
+      const filtered = query
+        ? suggestions.filter((s) => s.name.toLowerCase().includes(query.toLowerCase()))
+        : suggestions;
+
+      return filtered.map((s) => ({
+        value: s.name,
+        label: `${s.name} (used ${s.count} times)`,
+        metadata: { lastUsed: s.lastUsed, count: s.count },
+      }));
+    } catch (error) {
+      console.error('Error fetching location suggestions:', error);
+      return [];
+    }
+  }, []);
+
   const handleSave = async (content: string) => {
     setIsSaving(true);
     setError(null);
@@ -156,14 +180,18 @@ export default function Editor() {
       const response = await saveContent({
         content,
         searchHint,
+        location: location || undefined,
+        tagIds: selectedTags.length > 0 ? selectedTags.map((tag) => tag.id) : undefined,
         mediaPaths: uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
       });
 
       if (response.success) {
         setSuccessMessage(`${response.message} (ID: ${response.id})`);
         console.log('Save successful:', response);
-        // Clear uploaded images after successful save
+        // Clear uploaded images, location, and tags after successful save
         setUploadedImagePaths([]);
+        setLocation('');
+        setSelectedTags([]);
       } else {
         setError('Failed to save content');
       }
@@ -209,7 +237,20 @@ export default function Editor() {
         </div>
       )}
 
-      <div style={{ height: 'calc(100% - 60px)' }}>
+      {/* Location field */}
+      <Autocomplete
+        value={location}
+        onChange={setLocation}
+        fetchSuggestions={fetchLocationSuggestionsWrapper}
+        placeholder="Enter location (optional)"
+        label="Location"
+        minChars={0}
+      />
+
+      {/* Tags field */}
+      <TagAutocomplete selectedTags={selectedTags} onTagsChange={setSelectedTags} />
+
+      <div style={{ height: 'calc(100% - 200px)' }}>
         <MarkdownEditor
           initialValue={content}
           onImageUpload={handleImageUpload}
