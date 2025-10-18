@@ -1,4 +1,4 @@
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState, useRef, type ChangeEvent, useEffect } from "react";
 import Markdown from "react-markdown";
 
 interface MarkdownEditorProps {
@@ -7,6 +7,7 @@ interface MarkdownEditorProps {
   onChange?: (value: string) => void;
   onSave?: (content: string) => void;
   isSaving?: boolean;
+  urlTransform?: (url: string) => string;
 }
 
 export default function MarkdownEditor({
@@ -15,9 +16,15 @@ export default function MarkdownEditor({
   onChange,
   onSave,
   isSaving = false,
+  urlTransform = (url) => url,
 }: MarkdownEditorProps) {
   const [content, setContent] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Update content when initialValue changes (e.g., loading a saved entry)
+  useEffect(() => {
+    setContent(initialValue);
+  }, [initialValue]);
 
   const handleContentChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
@@ -95,11 +102,11 @@ export default function MarkdownEditor({
 
     if (onImageUpload) {
       try {
-        // Call custom handler
-        const urls = await onImageUpload(files);
+        // Call custom handler - returns filenames (not full URLs)
+        const filenames = await onImageUpload(files);
 
-        // Insert markdown image syntax for each uploaded image
-        const imageMarkdown = urls.map((url) => `![image](${url})`).join("\n");
+        // Insert markdown image syntax with filenames only
+        const imageMarkdown = filenames.map((filename) => `![image](${filename})`).join("\n");
         const textarea = textareaRef.current;
         if (!textarea) return;
 
@@ -180,7 +187,7 @@ export default function MarkdownEditor({
           overflow: "auto",
         }}
       >
-        <Markdown urlTransform={(url) => url}>{content}</Markdown>
+        <Markdown urlTransform={urlTransform}>{content}</Markdown>
       </div>
     </div>
   );
