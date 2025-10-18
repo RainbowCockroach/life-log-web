@@ -76,6 +76,12 @@ function App() {
       const url = match[1];
       // Extract just the filename (handle both relative and absolute URLs)
       const filename = url.split('/').pop() || url;
+
+      // Skip uploading placeholders
+      if (filename && filename.startsWith('uploading-')) {
+        continue;
+      }
+
       // Only include if it looks like a timestamp-based filename
       if (filename && /^\d+\.\w+/.test(filename)) {
         filenames.push(filename);
@@ -123,6 +129,7 @@ function App() {
     };
 
     fetchSignedUrls();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content, extractImageFilenames]);
 
   // URL transform function for Markdown component
@@ -130,6 +137,12 @@ function App() {
     // If it's already a full URL, return as-is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
+    }
+
+    // If it's an uploading placeholder, return a data URL for a loading indicator
+    if (url.startsWith('uploading-')) {
+      // Return a transparent 1x1 pixel (or you could use a loading spinner image)
+      return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ctext x="10" y="50" font-size="12"%3EUploading...%3C/text%3E%3C/svg%3E';
     }
 
     // If it's a filename, look up the signed URL

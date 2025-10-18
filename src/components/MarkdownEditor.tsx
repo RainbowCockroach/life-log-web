@@ -100,28 +100,69 @@ export default function MarkdownEditor({
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Capture cursor position before upload starts
+    const insertPosition = textarea.selectionStart;
+
+    // Generate unique timestamp for this upload batch
+    const uploadId = Date.now();
+
+    // Create placeholder text for each file
+    const placeholderData = files.map((file, i) => ({
+      file,
+      placeholder: `![Uploading ${file.name}...](uploading-${uploadId}-${i})`,
+    }));
+
+    const placeholders = placeholderData.map(p => p.placeholder).join("\n");
+
+    // Insert placeholders immediately at cursor position
+    const contentWithPlaceholders =
+      content.substring(0, insertPosition) +
+      "\n" +
+      placeholders +
+      "\n" +
+      content.substring(insertPosition);
+
+    setContent(contentWithPlaceholders);
+    onChange?.(contentWithPlaceholders);
+
+    // Move cursor to after the placeholders so user can continue typing
+    const newCursorPosition = insertPosition + placeholders.length + 2; // +2 for newlines
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+    }, 0);
+
     if (onImageUpload) {
       try {
         // Call custom handler - returns filenames (not full URLs)
         const filenames = await onImageUpload(files);
 
-        // Insert markdown image syntax with filenames only
-        const imageMarkdown = filenames.map((filename) => `![image](${filename})`).join("\n");
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const newContent =
-          content.substring(0, start) +
-          "\n" +
-          imageMarkdown +
-          "\n" +
-          content.substring(start);
-
-        setContent(newContent);
-        onChange?.(newContent);
+        // Replace placeholders with actual filenames using functional update
+        // This ensures we work with the latest content (user may have typed more)
+        setContent((currentContent) => {
+          let updatedContent = currentContent;
+          placeholderData.forEach((item, i) => {
+            const actualMarkdown = `![image](${filenames[i]})`;
+            updatedContent = updatedContent.replace(item.placeholder, actualMarkdown);
+          });
+          onChange?.(updatedContent);
+          return updatedContent;
+        });
       } catch (error) {
         console.error("Image upload failed:", error);
+
+        // Remove placeholders on error using functional update
+        setContent((currentContent) => {
+          let contentWithoutPlaceholders = currentContent;
+          placeholderData.forEach((item) => {
+            contentWithoutPlaceholders = contentWithoutPlaceholders.replace(item.placeholder + "\n", "");
+          });
+          onChange?.(contentWithoutPlaceholders);
+          return contentWithoutPlaceholders;
+        });
       }
     }
 
