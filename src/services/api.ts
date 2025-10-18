@@ -16,7 +16,7 @@ export interface Entry {
   searchHint: string;
   isHighlighted: boolean;
   mediaPaths: string[];
-  location?: string;
+  location?: Tag | null;
   createdAt: string;
   tags?: Array<{
     id: number;
@@ -28,7 +28,7 @@ export interface SaveContentRequest {
   content: string;
   searchHint: string;
   mediaPaths?: string[];
-  location?: string;
+  locationId?: number;
   tagIds?: number[];
   isHighlighted?: boolean;
 }
@@ -244,42 +244,6 @@ export async function fetchEntries(
     };
   } catch (error) {
     console.error("Fetch entries error:", error);
-    throw error;
-  }
-}
-
-export interface LocationSuggestion {
-  name: string;
-  lastUsed: string;
-  count: number;
-}
-
-/**
- * Fetches location suggestions based on usage
- * @param limit - Maximum number of suggestions to return
- * @returns Promise with array of location suggestions
- */
-export async function fetchLocationSuggestions(
-  limit: number = 20
-): Promise<LocationSuggestion[]> {
-  const apiUrl = `${API_CONFIG.BASE_URL}/api/entries/locations/suggestions?limit=${limit}`;
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: "GET",
-      headers: {
-        "x-api-key": getStoredApiKey(),
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Fetch location suggestions error:", error);
     throw error;
   }
 }

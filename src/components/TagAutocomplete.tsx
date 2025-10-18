@@ -9,6 +9,7 @@ interface TagAutocompleteProps {
   label?: string;
   placeholder?: string;
   defaultColor?: string;
+  singleSelect?: boolean;
 }
 
 export default function TagAutocomplete({
@@ -17,7 +18,8 @@ export default function TagAutocomplete({
   tagType = 'tag',
   label = 'Tags',
   placeholder = 'Type to search tags...',
-  defaultColor = '#e0e0e0'
+  defaultColor = '#e0e0e0',
+  singleSelect = false
 }: TagAutocompleteProps) {
   const [inputValue, setInputValue] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -66,7 +68,11 @@ export default function TagAutocomplete({
             textColor: '#000000',
           },
         });
-        onTagsChange([...selectedTags, newTag]);
+        if (singleSelect) {
+          onTagsChange([newTag]);
+        } else {
+          onTagsChange([...selectedTags, newTag]);
+        }
         setInputValue('');
       } catch (error) {
         console.error('Error creating tag:', error);
@@ -76,7 +82,11 @@ export default function TagAutocomplete({
       }
     } else if (option.metadata) {
       // Select existing tag
-      onTagsChange([...selectedTags, option.metadata as Tag]);
+      if (singleSelect) {
+        onTagsChange([option.metadata as Tag]);
+      } else {
+        onTagsChange([...selectedTags, option.metadata as Tag]);
+      }
       setInputValue('');
     }
   };
@@ -136,19 +146,28 @@ export default function TagAutocomplete({
         </div>
       )}
 
-      {/* Tag input with autocomplete */}
-      <Autocomplete
-        value={inputValue}
-        onChange={setInputValue}
-        onSelect={handleTagSelect}
-        fetchSuggestions={fetchTagSuggestions}
-        placeholder={isCreating ? 'Creating...' : placeholder}
-        minChars={1}
-        debounceMs={200}
-      />
-      {isCreating && (
+      {/* Tag input with autocomplete - disabled if singleSelect and already has selection */}
+      {!(singleSelect && selectedTags.length > 0) && (
+        <>
+          <Autocomplete
+            value={inputValue}
+            onChange={setInputValue}
+            onSelect={handleTagSelect}
+            fetchSuggestions={fetchTagSuggestions}
+            placeholder={isCreating ? 'Creating...' : placeholder}
+            minChars={1}
+            debounceMs={200}
+          />
+          {isCreating && (
+            <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+              Creating new tag...
+            </div>
+          )}
+        </>
+      )}
+      {singleSelect && selectedTags.length > 0 && (
         <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-          Creating new tag...
+          Remove current selection to choose a different {label.toLowerCase()}
         </div>
       )}
     </div>

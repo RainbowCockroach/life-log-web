@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import MarkdownEditor from './MarkdownEditor';
-import Autocomplete, { type AutocompleteOption } from './Autocomplete';
 import TagAutocomplete from './TagAutocomplete';
-import { saveContent, uploadImages, getSignedUrls, fetchLocationSuggestions, type Tag } from '../services/api';
+import { saveContent, uploadImages, getSignedUrls, type Tag } from '../services/api';
 import { processImages } from '../utils/imageUtils';
 import { API_CONFIG } from '../config/constants';
 
@@ -12,7 +11,7 @@ export default function Editor() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [uploadedImagePaths, setUploadedImagePaths] = useState<string[]>([]);
   const [content, setContent] = useState('');
-  const [location, setLocation] = useState('');
+  const [locationTag, setLocationTag] = useState<Tag | null>(null);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [imageUrlMap, setImageUrlMap] = useState<Map<string, string>>(new Map());
 
@@ -144,26 +143,6 @@ export default function Editor() {
     return signedUrl || url;
   }, [imageUrlMap]);
 
-  const fetchLocationSuggestionsWrapper = useCallback(async (query: string): Promise<AutocompleteOption[]> => {
-    try {
-      const suggestions = await fetchLocationSuggestions(20);
-
-      // Filter based on query if provided
-      const filtered = query
-        ? suggestions.filter((s) => s.name.toLowerCase().includes(query.toLowerCase()))
-        : suggestions;
-
-      return filtered.map((s) => ({
-        value: s.name,
-        label: `${s.name} (used ${s.count} times)`,
-        metadata: { lastUsed: s.lastUsed, count: s.count },
-      }));
-    } catch (error) {
-      console.error('Error fetching location suggestions:', error);
-      return [];
-    }
-  }, []);
-
   const handleSave = async (content: string) => {
     setIsSaving(true);
     setError(null);
@@ -180,7 +159,7 @@ export default function Editor() {
       const response = await saveContent({
         content,
         searchHint,
-        location: location || undefined,
+        locationId: locationTag?.id,
         tagIds: selectedTags.length > 0 ? selectedTags.map((tag) => tag.id) : undefined,
         mediaPaths: uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
       });
@@ -190,7 +169,7 @@ export default function Editor() {
         console.log('Save successful:', response);
         // Clear uploaded images, location, and tags after successful save
         setUploadedImagePaths([]);
-        setLocation('');
+        setLocationTag(null);
         setSelectedTags([]);
       } else {
         setError('Failed to save content');
@@ -238,13 +217,14 @@ export default function Editor() {
       )}
 
       {/* Location field */}
-      <Autocomplete
-        value={location}
-        onChange={setLocation}
-        fetchSuggestions={fetchLocationSuggestionsWrapper}
-        placeholder="Enter location (optional)"
+      <TagAutocomplete
+        selectedTags={locationTag ? [locationTag] : []}
+        onTagsChange={(tags) => setLocationTag(tags[0] || null)}
+        tagType="location"
         label="Location"
-        minChars={0}
+        placeholder="Enter location (optional)..."
+        defaultColor="#10b981"
+        singleSelect={true}
       />
 
       {/* Tags field */}
