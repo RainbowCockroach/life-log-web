@@ -10,6 +10,19 @@ function getStoredApiKey(): string {
   return getApiKey() || API_CONFIG.API_KEY;
 }
 
+export interface Entry {
+  id: number;
+  content: string;
+  searchHint: string;
+  isHighlighted: boolean;
+  mediaPaths: string[];
+  createdAt: string;
+  tags?: Array<{
+    id: number;
+    name: string;
+  }>;
+}
+
 export interface SaveContentRequest {
   content: string;
   searchHint: string;
@@ -22,7 +35,7 @@ export interface SaveContentResponse {
   success: boolean;
   message: string;
   id?: number;
-  entry?: any;
+  entry?: Entry;
 }
 
 export interface UploadImageResponse {
@@ -176,4 +189,59 @@ export async function getSignedUrls(
 ): Promise<SignedUrlResponse[]> {
   const signPromises = filenames.map((filename) => getSignedUrl(filename, expiryMs));
   return Promise.all(signPromises);
+}
+
+export interface FetchEntriesResponse {
+  entries: Entry[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+/**
+ * Fetches entries with pagination
+ * @param page - Page number (1-indexed)
+ * @param pageSize - Number of entries per page
+ * @returns Promise with paginated entries
+ */
+export async function fetchEntries(
+  page: number = 1,
+  pageSize: number = 10
+): Promise<FetchEntriesResponse> {
+  const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const allEntries: Entry[] = await response.json();
+
+    // Implement client-side pagination since API doesn't support it yet
+    const total = allEntries.length;
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const entries = allEntries.slice(startIndex, endIndex);
+    const hasMore = endIndex < total;
+
+    return {
+      entries,
+      total,
+      page,
+      pageSize,
+      hasMore,
+    };
+  } catch (error) {
+    console.error("Fetch entries error:", error);
+    throw error;
+  }
 }
