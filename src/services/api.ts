@@ -1,6 +1,6 @@
 // API service for markdown content operations
-import { getApiKey, getBaseUrl } from '../utils/apiKeyStorage';
-import { API_CONFIG } from '../config/constants';
+import { getApiKey } from "../utils/apiKeyStorage";
+import { API_CONFIG } from "../config/constants";
 
 /**
  * Gets the API key from cookie storage, falling back to the configured API key
@@ -8,14 +8,6 @@ import { API_CONFIG } from '../config/constants';
  */
 function getStoredApiKey(): string {
   return getApiKey() || API_CONFIG.API_KEY;
-}
-
-/**
- * Gets the base URL from cookie storage, falling back to the configured base URL
- * @returns The base URL
- */
-function getStoredBaseUrl(): string {
-  return getBaseUrl() || API_CONFIG.BASE_URL;
 }
 
 export interface Entry {
@@ -71,7 +63,7 @@ export interface SignedUrlResponse {
 export async function saveContent(
   request: SaveContentRequest
 ): Promise<SaveContentResponse> {
-  const apiUrl = `${getStoredBaseUrl()}${API_CONFIG.ENDPOINTS.ENTRIES}`;
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -85,7 +77,9 @@ export async function saveContent(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     const entry = await response.json();
@@ -107,7 +101,7 @@ export async function saveContent(
  * @returns Promise with upload response
  */
 export async function uploadImage(file: File): Promise<UploadImageResponse> {
-  const apiUrl = `${getStoredBaseUrl()}${API_CONFIG.ENDPOINTS.MEDIA_UPLOAD}`;
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.MEDIA_UPLOAD}`;
 
   try {
     // Prepare FormData
@@ -124,13 +118,15 @@ export async function uploadImage(file: File): Promise<UploadImageResponse> {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     const media = await response.json();
     return {
       success: true,
-      url: `${getStoredBaseUrl()}${media.url}`, // Use signed URL from backend
+      url: `${API_CONFIG.API_BASE_URL}${media.url}`, // Use signed URL from backend
       path: media.path,
       id: media.id,
       filename: media.filename,
@@ -163,7 +159,7 @@ export async function getSignedUrl(
   filename: string,
   expiryMs?: number
 ): Promise<SignedUrlResponse> {
-  const apiUrl = `${getStoredBaseUrl()}/api/media/sign`;
+  const apiUrl = `${API_CONFIG.API_BASE_URL}/api/media/sign`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -177,7 +173,9 @@ export async function getSignedUrl(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     return await response.json();
@@ -197,7 +195,9 @@ export async function getSignedUrls(
   filenames: string[],
   expiryMs?: number
 ): Promise<SignedUrlResponse[]> {
-  const signPromises = filenames.map((filename) => getSignedUrl(filename, expiryMs));
+  const signPromises = filenames.map((filename) =>
+    getSignedUrl(filename, expiryMs)
+  );
   return Promise.all(signPromises);
 }
 
@@ -219,7 +219,7 @@ export async function fetchEntries(
   page: number = 1,
   pageSize: number = 10
 ): Promise<FetchEntriesResponse> {
-  const apiUrl = `${getStoredBaseUrl()}${API_CONFIG.ENDPOINTS.ENTRIES}`;
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -231,7 +231,9 @@ export async function fetchEntries(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     const allEntries: Entry[] = await response.json();
@@ -277,12 +279,17 @@ export interface Tag {
  * @param type - Optional tag type filter (e.g., 'tag', 'location')
  * @returns Promise with array of matching tags
  */
-export async function searchTagSuggestions(query: string, type?: string): Promise<Tag[]> {
+export async function searchTagSuggestions(
+  query: string,
+  type?: string
+): Promise<Tag[]> {
   if (!query || query.trim() === "") {
     return [];
   }
 
-  let apiUrl = `${getStoredBaseUrl()}/api/tags/suggestions/search?q=${encodeURIComponent(query)}`;
+  let apiUrl = `${
+    API_CONFIG.API_BASE_URL
+  }/api/tags/suggestions/search?q=${encodeURIComponent(query)}`;
   if (type) {
     apiUrl += `&type=${encodeURIComponent(type)}`;
   }
@@ -297,7 +304,9 @@ export async function searchTagSuggestions(query: string, type?: string): Promis
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     return await response.json();
@@ -324,7 +333,7 @@ export interface CreateTagRequest {
  * @returns Promise with created tag
  */
 export async function createTag(tag: CreateTagRequest): Promise<Tag> {
-  const apiUrl = `${getStoredBaseUrl()}/api/tags`;
+  const apiUrl = `${API_CONFIG.API_BASE_URL}/api/tags`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -338,7 +347,9 @@ export async function createTag(tag: CreateTagRequest): Promise<Tag> {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     return await response.json();

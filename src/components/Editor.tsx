@@ -1,37 +1,47 @@
-import { useState, useEffect, useCallback } from 'react';
-import MarkdownEditor from './MarkdownEditor';
-import TagAutocomplete from './TagAutocomplete';
-import { saveContent, uploadImages, getSignedUrls, type Tag } from '../services/api';
-import { processImages } from '../utils/imageUtils';
-import { getBaseUrl } from '../utils/apiKeyStorage';
-import { API_CONFIG } from '../config/constants';
+import { useState, useEffect, useCallback } from "react";
+import MarkdownEditor from "./MarkdownEditor";
+import TagAutocomplete from "./TagAutocomplete";
+import {
+  saveContent,
+  uploadImages,
+  getSignedUrls,
+  type Tag,
+} from "../services/api";
+import { processImages } from "../utils/imageUtils";
+import { API_CONFIG } from "../config/constants";
 
 export default function Editor() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [uploadedImagePaths, setUploadedImagePaths] = useState<string[]>([]);
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState("");
   const [locationTag, setLocationTag] = useState<Tag | null>(null);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-  const [imageUrlMap, setImageUrlMap] = useState<Map<string, string>>(new Map());
+  const [imageUrlMap, setImageUrlMap] = useState<Map<string, string>>(
+    new Map()
+  );
 
   const handleImageUpload = async (files: File[]): Promise<string[]> => {
     try {
       // Step 1: Compress and rename images
       const processedImages = await processImages(files);
 
-      console.log('Processed images:', processedImages);
-      console.log('Compression stats:');
+      console.log("Processed images:", processedImages);
+      console.log("Compression stats:");
       processedImages.forEach((img, i) => {
-        console.log(`  ${i + 1}. ${img.originalName} → ${img.newName} (${(img.size / 1024).toFixed(2)} KB)`);
+        console.log(
+          `  ${i + 1}. ${img.originalName} → ${img.newName} (${(
+            img.size / 1024
+          ).toFixed(2)} KB)`
+        );
       });
 
       // Step 2: Upload to server using the API service
       const uploadedFiles = processedImages.map((img) => img.file);
       const uploadResults = await uploadImages(uploadedFiles);
 
-      console.log('Upload results:', uploadResults);
+      console.log("Upload results:", uploadResults);
 
       // Track the uploaded image paths for saving with the entry
       const newPaths = uploadResults.map((result) => result.path);
@@ -39,22 +49,24 @@ export default function Editor() {
 
       // Store signed URLs in the map for immediate preview
       const newMap = new Map(imageUrlMap);
-      const baseUrl = getBaseUrl() || API_CONFIG.BASE_URL;
       uploadResults.forEach((result) => {
-        newMap.set(result.filename || result.path, `${baseUrl}${result.url}`);
+        newMap.set(
+          result.filename || result.path,
+          `${API_CONFIG.API_BASE_URL}${result.url}`
+        );
       });
       setImageUrlMap(newMap);
 
       // Return filenames (not URLs) to insert in markdown
       return uploadResults.map((result) => result.filename || result.path);
     } catch (error) {
-      console.error('Image upload failed:', error);
+      console.error("Image upload failed:", error);
       throw error;
     }
   };
 
   const handleContentChange = (newContent: string) => {
-    console.log('Content changed:', newContent);
+    console.log("Content changed:", newContent);
     setContent(newContent);
     // Clear messages when content changes
     setError(null);
@@ -70,10 +82,10 @@ export default function Editor() {
     while ((match = imageRegex.exec(markdown)) !== null) {
       const url = match[1];
       // Extract just the filename (handle both relative and absolute URLs)
-      const filename = url.split('/').pop() || url;
+      const filename = url.split("/").pop() || url;
 
       // Skip uploading placeholders
-      if (filename && filename.startsWith('uploading-')) {
+      if (filename && filename.startsWith("uploading-")) {
         continue;
       }
 
@@ -95,15 +107,14 @@ export default function Editor() {
       if (filenames.length === 0) return;
 
       // Filter out filenames we already have valid URLs for
-      const baseUrl = getBaseUrl() || API_CONFIG.BASE_URL;
       const missingFilenames = filenames.filter((filename) => {
         const existingUrl = imageUrlMap.get(filename);
         if (!existingUrl) return true;
 
         // Check if URL has expired by parsing the expires query param
         try {
-          const url = new URL(existingUrl, baseUrl);
-          const expires = parseInt(url.searchParams.get('expires') || '0');
+          const url = new URL(existingUrl, API_CONFIG.API_BASE_URL);
+          const expires = parseInt(url.searchParams.get("expires") || "0");
           return Date.now() > expires - 60000; // Refresh if less than 1 minute left
         } catch {
           return true;
@@ -116,11 +127,14 @@ export default function Editor() {
         const signedUrls = await getSignedUrls(missingFilenames);
         const newMap = new Map(imageUrlMap);
         signedUrls.forEach((result) => {
-          newMap.set(result.filename, `${baseUrl}${result.url}`);
+          newMap.set(
+            result.filename,
+            `${API_CONFIG.API_BASE_URL}${result.url}`
+          );
         });
         setImageUrlMap(newMap);
       } catch (error) {
-        console.error('Failed to fetch signed URLs:', error);
+        console.error("Failed to fetch signed URLs:", error);
       }
     };
 
@@ -129,22 +143,25 @@ export default function Editor() {
   }, [content, extractImageFilenames]);
 
   // URL transform function for Markdown component
-  const urlTransform = useCallback((url: string): string => {
-    // If it's already a full URL, return as-is
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
+  const urlTransform = useCallback(
+    (url: string): string => {
+      // If it's already a full URL, return as-is
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
+      }
 
-    // If it's an uploading placeholder, return a data URL for a loading indicator
-    if (url.startsWith('uploading-')) {
-      // Return a transparent 1x1 pixel (or you could use a loading spinner image)
-      return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ctext x="10" y="50" font-size="12"%3EUploading...%3C/text%3E%3C/svg%3E';
-    }
+      // If it's an uploading placeholder, return a data URL for a loading indicator
+      if (url.startsWith("uploading-")) {
+        // Return a transparent 1x1 pixel (or you could use a loading spinner image)
+        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ctext x="10" y="50" font-size="12"%3EUploading...%3C/text%3E%3C/svg%3E';
+      }
 
-    // If it's a filename, look up the signed URL
-    const signedUrl = imageUrlMap.get(url);
-    return signedUrl || url;
-  }, [imageUrlMap]);
+      // If it's a filename, look up the signed URL
+      const signedUrl = imageUrlMap.get(url);
+      return signedUrl || url;
+    },
+    [imageUrlMap]
+  );
 
   const handleSave = async (content: string) => {
     setIsSaving(true);
@@ -154,8 +171,8 @@ export default function Editor() {
     try {
       // Generate search hint from content (remove markdown syntax for better search)
       const searchHint = content
-        .replace(/[#*_~`\[\]()]/g, ' ')
-        .replace(/\s+/g, ' ')
+        .replace(/[#*_~`\[\]()]/g, " ")
+        .replace(/\s+/g, " ")
         .trim()
         .toLowerCase();
 
@@ -163,42 +180,48 @@ export default function Editor() {
         content,
         searchHint,
         locationId: locationTag?.id,
-        tagIds: selectedTags.length > 0 ? selectedTags.map((tag) => tag.id) : undefined,
-        mediaPaths: uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
+        tagIds:
+          selectedTags.length > 0
+            ? selectedTags.map((tag) => tag.id)
+            : undefined,
+        mediaPaths:
+          uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
       });
 
       if (response.success) {
         setSuccessMessage(`${response.message} (ID: ${response.id})`);
-        console.log('Save successful:', response);
+        console.log("Save successful:", response);
         // Clear uploaded images, location, and tags after successful save
         setUploadedImagePaths([]);
         setLocationTag(null);
         setSelectedTags([]);
       } else {
-        setError('Failed to save content');
+        setError("Failed to save content");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while saving');
-      console.error('Save error:', err);
+      setError(
+        err instanceof Error ? err.message : "An error occurred while saving"
+      );
+      console.error("Save error:", err);
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div style={{ padding: '20px', height: '100vh', boxSizing: 'border-box' }}>
-      <h1 style={{ margin: '0 0 20px 0' }}>Markdown Editor</h1>
+    <div style={{ padding: "20px", height: "100vh", boxSizing: "border-box" }}>
+      <h1 style={{ margin: "0 0 20px 0" }}>Markdown Editor</h1>
 
       {/* Status messages */}
       {error && (
         <div
           style={{
-            padding: '8px 12px',
-            marginBottom: '12px',
-            backgroundColor: '#fee',
-            border: '1px solid #fcc',
-            borderRadius: '4px',
-            color: '#c00',
+            padding: "8px 12px",
+            marginBottom: "12px",
+            backgroundColor: "#fee",
+            border: "1px solid #fcc",
+            borderRadius: "4px",
+            color: "#c00",
           }}
         >
           Error: {error}
@@ -207,12 +230,12 @@ export default function Editor() {
       {successMessage && (
         <div
           style={{
-            padding: '8px 12px',
-            marginBottom: '12px',
-            backgroundColor: '#efe',
-            border: '1px solid #cfc',
-            borderRadius: '4px',
-            color: '#060',
+            padding: "8px 12px",
+            marginBottom: "12px",
+            backgroundColor: "#efe",
+            border: "1px solid #cfc",
+            borderRadius: "4px",
+            color: "#060",
           }}
         >
           {successMessage}
@@ -231,9 +254,12 @@ export default function Editor() {
       />
 
       {/* Tags field */}
-      <TagAutocomplete selectedTags={selectedTags} onTagsChange={setSelectedTags} />
+      <TagAutocomplete
+        selectedTags={selectedTags}
+        onTagsChange={setSelectedTags}
+      />
 
-      <div style={{ height: 'calc(100% - 200px)' }}>
+      <div style={{ height: "calc(100% - 200px)" }}>
         <MarkdownEditor
           initialValue={content}
           onImageUpload={handleImageUpload}
