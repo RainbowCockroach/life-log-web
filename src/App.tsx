@@ -20,8 +20,8 @@ function Navigation() {
     <>
       <nav style={{ display: "flex", justifyContent: "space-between" }}>
         <div>
-          <Link to="/">New Entry</Link>
-          <Link to="/entries">View Entries</Link>
+          <Link to={`${API_CONFIG.BASE_URL}/`}>New Entry</Link>
+          <Link to={`${API_CONFIG.BASE_URL}/entries`}>View Entries</Link>
         </div>
         <button onClick={() => setIsApiKeyModalOpen(true)}>
           {hasApiKey() ? "API Settings" : "Set API Key"}
