@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
-import Markdown from 'react-markdown';
-import { getSignedUrls, type SignedUrlResponse } from '../services/api';
-import { getBaseUrl } from '../utils/apiKeyStorage';
-import { API_CONFIG } from '../config/constants';
+import { useCallback, useEffect, useState } from "react";
+import Markdown from "react-markdown";
+import { getSignedUrls, type SignedUrlResponse } from "../services/api";
+import { API_CONFIG } from "../config/constants";
 
 interface MarkdownViewerProps {
   content: string;
   mediaPaths?: string[];
 }
 
-export default function MarkdownViewer({ content, mediaPaths = [] }: MarkdownViewerProps) {
-  const [imageUrlMap, setImageUrlMap] = useState<Map<string, string>>(new Map());
+export default function MarkdownViewer({
+  content,
+  mediaPaths = [],
+}: MarkdownViewerProps) {
+  const [imageUrlMap, setImageUrlMap] = useState<Map<string, string>>(
+    new Map()
+  );
 
   // Extract image filenames from markdown content
   const extractImageFilenames = useCallback((markdown: string): string[] => {
@@ -21,7 +25,7 @@ export default function MarkdownViewer({ content, mediaPaths = [] }: MarkdownVie
     while ((match = imageRegex.exec(markdown)) !== null) {
       const url = match[1];
       // Extract just the filename (handle both relative and absolute URLs)
-      const filename = url.split('/').pop() || url;
+      const filename = url.split("/").pop() || url;
 
       // Only include if it looks like a timestamp-based filename
       if (filename && /^\d+\.\w+/.test(filename)) {
@@ -44,15 +48,14 @@ export default function MarkdownViewer({ content, mediaPaths = [] }: MarkdownVie
       if (allFilenames.length === 0) return;
 
       // Filter out filenames we already have valid URLs for
-      const baseUrl = getBaseUrl() || API_CONFIG.BASE_URL;
       const missingFilenames = allFilenames.filter((filename) => {
         const existingUrl = imageUrlMap.get(filename);
         if (!existingUrl) return true;
 
         // Check if URL has expired by parsing the expires query param
         try {
-          const url = new URL(existingUrl, baseUrl);
-          const expires = parseInt(url.searchParams.get('expires') || '0');
+          const url = new URL(existingUrl, API_CONFIG.API_BASE_URL);
+          const expires = parseInt(url.searchParams.get("expires") || "0");
           return Date.now() > expires - 60000; // Refresh if less than 1 minute left
         } catch {
           return true;
@@ -62,14 +65,19 @@ export default function MarkdownViewer({ content, mediaPaths = [] }: MarkdownVie
       if (missingFilenames.length === 0) return;
 
       try {
-        const signedUrls: SignedUrlResponse[] = await getSignedUrls(missingFilenames);
+        const signedUrls: SignedUrlResponse[] = await getSignedUrls(
+          missingFilenames
+        );
         const newMap = new Map(imageUrlMap);
         signedUrls.forEach((result) => {
-          newMap.set(result.filename, `${baseUrl}${result.url}`);
+          newMap.set(
+            result.filename,
+            `${API_CONFIG.API_BASE_URL}${result.url}`
+          );
         });
         setImageUrlMap(newMap);
       } catch (error) {
-        console.error('Failed to fetch signed URLs:', error);
+        console.error("Failed to fetch signed URLs:", error);
       }
     };
 
@@ -77,19 +85,22 @@ export default function MarkdownViewer({ content, mediaPaths = [] }: MarkdownVie
   }, [content, mediaPaths, extractImageFilenames, imageUrlMap]);
 
   // URL transform function for Markdown component
-  const urlTransform = useCallback((url: string): string => {
-    // If it's already a full URL, return as-is
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
+  const urlTransform = useCallback(
+    (url: string): string => {
+      // If it's already a full URL, return as-is
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
+      }
 
-    // If it's a filename, look up the signed URL
-    const signedUrl = imageUrlMap.get(url);
-    return signedUrl || url;
-  }, [imageUrlMap]);
+      // If it's a filename, look up the signed URL
+      const signedUrl = imageUrlMap.get(url);
+      return signedUrl || url;
+    },
+    [imageUrlMap]
+  );
 
   return (
-    <div style={{ padding: '8px' }}>
+    <div style={{ padding: "8px" }}>
       <Markdown urlTransform={urlTransform}>{content}</Markdown>
     </div>
   );

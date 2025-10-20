@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -9,13 +9,7 @@ import {
 import Editor from "./components/Editor";
 import EntriesList from "./components/EntriesList";
 import ApiKeyModal from "./components/ApiKeyModal";
-import {
-  hasApiKey,
-  saveApiKey,
-  getApiKey,
-  saveBaseUrl,
-  getBaseUrl,
-} from "./utils/apiKeyStorage";
+import { hasApiKey, saveApiKey, getApiKey } from "./utils/apiKeyStorage";
 import { API_CONFIG } from "./config/constants";
 
 function Navigation() {
@@ -23,137 +17,65 @@ function Navigation() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleApiKeySave = (apiKey: string, baseUrl: string) => {
+  const handleApiKeySave = (apiKey: string) => {
     saveApiKey(apiKey);
-    if (baseUrl) {
-      saveBaseUrl(baseUrl);
-    }
-    setSuccessMessage("API configuration saved successfully");
+    setSuccessMessage("API key saved successfully");
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
   return (
     <>
-      <nav
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "12px 20px",
-          borderBottom: "1px solid #ddd",
-          backgroundColor: "#f8f9fa",
-        }}
-      >
-        <div style={{ display: "flex", gap: "16px" }}>
-          <Link
-            to="/"
-            style={{
-              padding: "8px 16px",
-              textDecoration: "none",
-              borderRadius: "4px",
-              backgroundColor:
-                location.pathname === "/" ? "#007bff" : "transparent",
-              color: location.pathname === "/" ? "white" : "#007bff",
-              border: "1px solid #007bff",
-            }}
-          >
-            New Entry
-          </Link>
-          <Link
-            to="/entries"
-            style={{
-              padding: "8px 16px",
-              textDecoration: "none",
-              borderRadius: "4px",
-              backgroundColor:
-                location.pathname === "/entries" ? "#007bff" : "transparent",
-              color: location.pathname === "/entries" ? "white" : "#007bff",
-              border: "1px solid #007bff",
-            }}
-          >
-            View Entries
-          </Link>
+      <nav style={{ display: "flex", justifyContent: "space-between" }}>
+        <div>
+          <Link to="/">New Entry</Link>
+          <Link to="/entries">View Entries</Link>
         </div>
-        <button
-          onClick={() => setIsApiKeyModalOpen(true)}
-          style={{
-            padding: "8px 16px",
-            fontSize: "14px",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            backgroundColor: hasApiKey() ? "#28a745" : "#ffc107",
-            color: "white",
-            cursor: "pointer",
-          }}
-        >
+        <button onClick={() => setIsApiKeyModalOpen(true)}>
           {hasApiKey() ? "API Settings" : "Set API Key"}
         </button>
       </nav>
 
-      {successMessage && (
-        <div
-          style={{
-            padding: "8px 12px",
-            margin: "12px 20px",
-            backgroundColor: "#efe",
-            border: "1px solid #cfc",
-            borderRadius: "4px",
-            color: "#060",
-          }}
-        >
-          {successMessage}
-        </div>
-      )}
+      {successMessage && <div>{successMessage}</div>}
 
       <ApiKeyModal
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
         onSave={handleApiKeySave}
         currentApiKey={getApiKey() || ""}
-        currentBaseUrl={getBaseUrl() || API_CONFIG.BASE_URL}
       />
     </>
   );
 }
 
 function App() {
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-
-  // Check for API key on mount
-  useEffect(() => {
-    if (!hasApiKey()) {
-      setIsApiKeyModalOpen(true);
-    }
-  }, []);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(!hasApiKey());
 
   return (
     <Router>
       <div
-        style={{ height: "100vh", display: "flex", flexDirection: "column" }}
+        style={{ display: "flex", flexDirection: "column", height: "100vh" }}
       >
         <Navigation />
         <div style={{ flex: 1, overflow: "auto" }}>
           <Routes>
-            <Route path="/" element={<Editor />} />
-            <Route path="/entries" element={<EntriesList />} />
+            <Route path={`/${API_CONFIG.BASE_URL}/`} element={<Editor />} />
+            <Route
+              path={`/${API_CONFIG.BASE_URL}/entries`}
+              element={<EntriesList />}
+            />
           </Routes>
         </div>
       </div>
 
-      {/* Show API key modal on first load if no key is set */}
       {!hasApiKey() && (
         <ApiKeyModal
           isOpen={isApiKeyModalOpen}
           onClose={() => setIsApiKeyModalOpen(false)}
-          onSave={(apiKey, baseUrl) => {
+          onSave={(apiKey) => {
             saveApiKey(apiKey);
-            if (baseUrl) {
-              saveBaseUrl(baseUrl);
-            }
             setIsApiKeyModalOpen(false);
           }}
-          currentApiKey={""}
-          currentBaseUrl={API_CONFIG.BASE_URL}
+          currentApiKey=""
         />
       )}
     </Router>

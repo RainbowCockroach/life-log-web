@@ -3,20 +3,18 @@ import { useState } from 'react';
 interface ApiKeyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (apiKey: string, baseUrl: string) => void;
+  onSave: (apiKey: string) => void;
   currentApiKey?: string;
-  currentBaseUrl?: string;
 }
 
-function ApiKeyModal({ isOpen, onClose, onSave, currentApiKey = '', currentBaseUrl = '' }: ApiKeyModalProps) {
+function ApiKeyModal({ isOpen, onClose, onSave, currentApiKey = '' }: ApiKeyModalProps) {
   const [apiKey, setApiKey] = useState(currentApiKey);
-  const [baseUrl, setBaseUrl] = useState(currentBaseUrl);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
     if (apiKey.trim()) {
-      onSave(apiKey.trim(), baseUrl.trim());
+      onSave(apiKey.trim());
       onClose();
     }
   };
@@ -56,32 +54,11 @@ function ApiKeyModal({ isOpen, onClose, onSave, currentApiKey = '', currentBaseU
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: '0 0 16px 0', fontSize: '20px' }}>API Configuration</h2>
+        <h2 style={{ margin: '0 0 16px 0', fontSize: '20px' }}>API Key Configuration</h2>
 
         <p style={{ margin: '0 0 16px 0', color: '#666', fontSize: '14px' }}>
-          Configure your API settings. These will be stored securely in cookies.
+          Enter your API key. It will be stored securely in cookies.
         </p>
-
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>
-            Base URL
-          </label>
-          <input
-            type="text"
-            value={baseUrl}
-            onChange={(e) => setBaseUrl(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="e.g., http://localhost:3000 (leave empty for default)"
-            style={{
-              width: '100%',
-              padding: '10px',
-              fontSize: '14px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              boxSizing: 'border-box',
-            }}
-          />
-        </div>
 
         <div style={{ marginBottom: '16px' }}>
           <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', fontWeight: '500' }}>
