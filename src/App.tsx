@@ -4,7 +4,6 @@ import Editor from "./components/Editor";
 import EntriesList from "./components/EntriesList";
 import ApiKeyModal from "./components/ApiKeyModal";
 import { hasApiKey, saveApiKey, getApiKey } from "./utils/apiKeyStorage";
-import { API_CONFIG } from "./config/constants";
 
 function Navigation() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -20,8 +19,8 @@ function Navigation() {
     <>
       <nav style={{ display: "flex", justifyContent: "space-between" }}>
         <div>
-          <Link to={`${API_CONFIG.BASE_URL}/`}>New Entry</Link>
-          <Link to={`${API_CONFIG.BASE_URL}/entries`}>View Entries</Link>
+          <Link to="/">New Entry</Link>
+          <Link to="/entries">View Entries</Link>
         </div>
         <button onClick={() => setIsApiKeyModalOpen(true)}>
           {hasApiKey() ? "API Settings" : "Set API Key"}
@@ -44,18 +43,15 @@ function App() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(!hasApiKey());
 
   return (
-    <Router>
+    <Router basename="/life-log-web">
       <div
         style={{ display: "flex", flexDirection: "column", height: "100vh" }}
       >
         <Navigation />
         <div style={{ flex: 1, overflow: "auto" }}>
           <Routes>
-            <Route path={`/${API_CONFIG.BASE_URL}/`} element={<Editor />} />
-            <Route
-              path={`/${API_CONFIG.BASE_URL}/entries`}
-              element={<EntriesList />}
-            />
+            <Route path="/" element={<Editor />} />
+            <Route path="/entries" element={<EntriesList />} />
           </Routes>
         </div>
       </div>
