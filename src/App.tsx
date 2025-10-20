@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Link,
-  useLocation,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Editor from "./components/Editor";
 import EntriesList from "./components/EntriesList";
 import ApiKeyModal from "./components/ApiKeyModal";
@@ -13,7 +7,6 @@ import { hasApiKey, saveApiKey, getApiKey } from "./utils/apiKeyStorage";
 import { API_CONFIG } from "./config/constants";
 
 function Navigation() {
-  const location = useLocation();
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
