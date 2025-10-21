@@ -19,12 +19,20 @@ export default function MarkdownEditor({
   urlTransform = (url) => url,
 }: MarkdownEditorProps) {
   const [content, setContent] = useState(initialValue);
+  const [showPreview, setShowPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Update content when initialValue changes (e.g., loading a saved entry)
   useEffect(() => {
     setContent(initialValue);
   }, [initialValue]);
+
+  // Auto-focus textarea on mount
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
 
   const handleContentChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
@@ -177,8 +185,23 @@ export default function MarkdownEditor({
   };
 
   return (
-    <div>
-      <div id="markdown-editor">
+    <div
+      style={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        id="markdown-editor"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+        }}
+      >
         <textarea
           id="markdown-edit-textarea"
           ref={textareaRef}
@@ -187,10 +210,17 @@ export default function MarkdownEditor({
           style={{
             flex: 1,
             resize: "none",
+            minHeight: 0,
+            width: "100%",
+            padding: "12px",
+            fontSize: "16px",
+            lineHeight: "1.6",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
           }}
           placeholder="Write your markdown here..."
         />
-        <div id="editor-button-bar">
+        <div id="editor-button-bar" style={{ padding: "8px 0" }}>
           <button onClick={handleBold}>Bold</button>
           <label>
             Image
@@ -205,11 +235,34 @@ export default function MarkdownEditor({
           <button onClick={handleSave} disabled={isSaving}>
             {isSaving ? "Saving..." : "Save"}
           </button>
+          <button onClick={() => setShowPreview(!showPreview)}>
+            {showPreview ? "Hide Preview" : "Show Preview"}
+          </button>
         </div>
       </div>
-      <div id="markdown-preview">
-        <Markdown urlTransform={urlTransform}>{content}</Markdown>
-      </div>
+      {showPreview && (
+        <div
+          id="markdown-preview"
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            padding: "12px",
+            minHeight: 0,
+          }}
+        >
+          <style>{`
+            #markdown-preview img {
+              max-width: 100%;
+              height: auto;
+              display: block;
+              margin: 8px 0;
+            }
+          `}</style>
+          <Markdown urlTransform={urlTransform}>{content}</Markdown>
+        </div>
+      )}
     </div>
   );
 }

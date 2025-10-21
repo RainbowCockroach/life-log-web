@@ -209,31 +209,65 @@ export default function Editor() {
   };
 
   return (
-    <div style={{ height: "100vh" }}>
-      <h1>Markdown Editor</h1>
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        padding: "16px",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ flexShrink: 0 }}>
+        {/* Status messages */}
+        {error && (
+          <div
+            style={{
+              padding: "8px",
+              marginBottom: "8px",
+              backgroundColor: "#fee",
+              border: "1px solid #fcc",
+              borderRadius: "4px",
+              color: "#c33",
+            }}
+          >
+            Error: {error}
+          </div>
+        )}
+        {successMessage && (
+          <div
+            style={{
+              padding: "8px",
+              marginBottom: "8px",
+              backgroundColor: "#efe",
+              border: "1px solid #cfc",
+              borderRadius: "4px",
+              color: "#3c3",
+            }}
+          >
+            {successMessage}
+          </div>
+        )}
 
-      {/* Status messages */}
-      {error && <div>Error: {error}</div>}
-      {successMessage && <div>{successMessage}</div>}
+        {/* Tags field */}
+        <TagAutocomplete
+          selectedTags={selectedTags}
+          onTagsChange={setSelectedTags}
+        />
 
-      {/* Tags field */}
-      <TagAutocomplete
-        selectedTags={selectedTags}
-        onTagsChange={setSelectedTags}
-      />
+        {/* Location field */}
+        <TagAutocomplete
+          selectedTags={locationTag ? [locationTag] : []}
+          onTagsChange={(tags) => setLocationTag(tags[0] || null)}
+          tagType="location"
+          label="Location"
+          placeholder="Enter location (optional)..."
+          defaultColor="#10b981"
+          singleSelect={true}
+        />
+      </div>
 
-      {/* Location field */}
-      <TagAutocomplete
-        selectedTags={locationTag ? [locationTag] : []}
-        onTagsChange={(tags) => setLocationTag(tags[0] || null)}
-        tagType="location"
-        label="Location"
-        placeholder="Enter location (optional)..."
-        defaultColor="#10b981"
-        singleSelect={true}
-      />
-
-      <div style={{ height: "calc(100% - 200px)" }}>
+      <div style={{ flex: 1, minHeight: 0, marginTop: "16px" }}>
         <MarkdownEditor
           initialValue={content}
           onImageUpload={handleImageUpload}
