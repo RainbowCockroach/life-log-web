@@ -100,7 +100,7 @@ export default function MarkdownViewer({
   );
 
   return (
-    <div style={{ padding: "8px" }}>
+    <div>
       <Markdown urlTransform={urlTransform}>{content}</Markdown>
     </div>
   );

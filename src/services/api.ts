@@ -159,7 +159,7 @@ export async function getSignedUrl(
   filename: string,
   expiryMs?: number
 ): Promise<SignedUrlResponse> {
-  const apiUrl = `${API_CONFIG.API_BASE_URL}/api/media/sign`;
+  const apiUrl = `${API_CONFIG.API_BASE_URL}/media/sign`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -289,7 +289,7 @@ export async function searchTagSuggestions(
 
   let apiUrl = `${
     API_CONFIG.API_BASE_URL
-  }/api/tags/suggestions/search?q=${encodeURIComponent(query)}`;
+  }/tags/suggestions/search?q=${encodeURIComponent(query)}`;
   if (type) {
     apiUrl += `&type=${encodeURIComponent(type)}`;
   }
@@ -333,7 +333,7 @@ export interface CreateTagRequest {
  * @returns Promise with created tag
  */
 export async function createTag(tag: CreateTagRequest): Promise<Tag> {
-  const apiUrl = `${API_CONFIG.API_BASE_URL}/api/tags`;
+  const apiUrl = `${API_CONFIG.API_BASE_URL}/tags`;
 
   try {
     const response = await fetch(apiUrl, {

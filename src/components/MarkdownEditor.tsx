@@ -19,12 +19,20 @@ export default function MarkdownEditor({
   urlTransform = (url) => url,
 }: MarkdownEditorProps) {
   const [content, setContent] = useState(initialValue);
+  const [showPreview, setShowPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Update content when initialValue changes (e.g., loading a saved entry)
   useEffect(() => {
     setContent(initialValue);
   }, [initialValue]);
+
+  // Auto-focus textarea on mount
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
 
   const handleContentChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
@@ -115,7 +123,7 @@ export default function MarkdownEditor({
       placeholder: `![Uploading ${file.name}...](uploading-${uploadId}-${i})`,
     }));
 
-    const placeholders = placeholderData.map(p => p.placeholder).join("\n");
+    const placeholders = placeholderData.map((p) => p.placeholder).join("\n");
 
     // Insert placeholders immediately at cursor position
     const contentWithPlaceholders =
@@ -146,7 +154,10 @@ export default function MarkdownEditor({
           let updatedContent = currentContent;
           placeholderData.forEach((item, i) => {
             const actualMarkdown = `![image](${filenames[i]})`;
-            updatedContent = updatedContent.replace(item.placeholder, actualMarkdown);
+            updatedContent = updatedContent.replace(
+              item.placeholder,
+              actualMarkdown
+            );
           });
           onChange?.(updatedContent);
           return updatedContent;
@@ -158,7 +169,10 @@ export default function MarkdownEditor({
         setContent((currentContent) => {
           let contentWithoutPlaceholders = currentContent;
           placeholderData.forEach((item) => {
-            contentWithoutPlaceholders = contentWithoutPlaceholders.replace(item.placeholder + "\n", "");
+            contentWithoutPlaceholders = contentWithoutPlaceholders.replace(
+              item.placeholder + "\n",
+              ""
+            );
           });
           onChange?.(contentWithoutPlaceholders);
           return contentWithoutPlaceholders;
@@ -171,19 +185,44 @@ export default function MarkdownEditor({
   };
 
   return (
-    <div style={{ display: "flex", gap: "16px", height: "100%" }}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-          <button onClick={handleBold} style={{ padding: "4px 12px" }}>
-            Bold
-          </button>
-          <label
-            style={{
-              padding: "4px 12px",
-              cursor: "pointer",
-              border: "1px solid #ccc",
-            }}
-          >
+    <div
+      style={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        id="markdown-editor"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+        }}
+      >
+        <textarea
+          id="markdown-edit-textarea"
+          ref={textareaRef}
+          value={content}
+          onChange={handleContentChange}
+          style={{
+            flex: 1,
+            resize: "none",
+            minHeight: 0,
+            width: "100%",
+            padding: "12px",
+            fontSize: "16px",
+            lineHeight: "1.6",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+          }}
+          placeholder="Write your markdown here..."
+        />
+        <div id="editor-button-bar" style={{ padding: "8px 0" }}>
+          <button onClick={handleBold}>Bold</button>
+          <label>
             Image
             <input
               type="file"
@@ -193,43 +232,37 @@ export default function MarkdownEditor({
               style={{ display: "none" }}
             />
           </label>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            style={{
-              padding: "4px 12px",
-              opacity: isSaving ? 0.6 : 1,
-              cursor: isSaving ? "not-allowed" : "pointer",
-            }}
-          >
+          <button onClick={handleSave} disabled={isSaving}>
             {isSaving ? "Saving..." : "Save"}
           </button>
+          <button onClick={() => setShowPreview(!showPreview)}>
+            {showPreview ? "Hide Preview" : "Show Preview"}
+          </button>
         </div>
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={handleContentChange}
+      </div>
+      {showPreview && (
+        <div
+          id="markdown-preview"
           style={{
             flex: 1,
-            padding: "8px",
-            fontFamily: "monospace",
-            fontSize: "14px",
-            resize: "none",
+            overflowY: "auto",
             border: "1px solid #ccc",
+            borderRadius: "4px",
+            padding: "12px",
+            minHeight: 0,
           }}
-          placeholder="Write your markdown here..."
-        />
-      </div>
-      <div
-        style={{
-          flex: 1,
-          padding: "8px",
-          border: "1px solid #ccc",
-          overflow: "auto",
-        }}
-      >
-        <Markdown urlTransform={urlTransform}>{content}</Markdown>
-      </div>
+        >
+          <style>{`
+            #markdown-preview img {
+              max-width: 100%;
+              height: auto;
+              display: block;
+              margin: 8px 0;
+            }
+          `}</style>
+          <Markdown urlTransform={urlTransform}>{content}</Markdown>
+        </div>
+      )}
     </div>
   );
 }
