@@ -115,7 +115,7 @@ export default function MarkdownEditor({
       placeholder: `![Uploading ${file.name}...](uploading-${uploadId}-${i})`,
     }));
 
-    const placeholders = placeholderData.map(p => p.placeholder).join("\n");
+    const placeholders = placeholderData.map((p) => p.placeholder).join("\n");
 
     // Insert placeholders immediately at cursor position
     const contentWithPlaceholders =
@@ -146,7 +146,10 @@ export default function MarkdownEditor({
           let updatedContent = currentContent;
           placeholderData.forEach((item, i) => {
             const actualMarkdown = `![image](${filenames[i]})`;
-            updatedContent = updatedContent.replace(item.placeholder, actualMarkdown);
+            updatedContent = updatedContent.replace(
+              item.placeholder,
+              actualMarkdown
+            );
           });
           onChange?.(updatedContent);
           return updatedContent;
@@ -158,7 +161,10 @@ export default function MarkdownEditor({
         setContent((currentContent) => {
           let contentWithoutPlaceholders = currentContent;
           placeholderData.forEach((item) => {
-            contentWithoutPlaceholders = contentWithoutPlaceholders.replace(item.placeholder + "\n", "");
+            contentWithoutPlaceholders = contentWithoutPlaceholders.replace(
+              item.placeholder + "\n",
+              ""
+            );
           });
           onChange?.(contentWithoutPlaceholders);
           return contentWithoutPlaceholders;
@@ -171,19 +177,22 @@ export default function MarkdownEditor({
   };
 
   return (
-    <div style={{ display: "flex", gap: "16px", height: "100%" }}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-          <button onClick={handleBold} style={{ padding: "4px 12px" }}>
-            Bold
-          </button>
-          <label
-            style={{
-              padding: "4px 12px",
-              cursor: "pointer",
-              border: "1px solid #ccc",
-            }}
-          >
+    <div>
+      <div id="markdown-editor">
+        <textarea
+          id="markdown-edit-textarea"
+          ref={textareaRef}
+          value={content}
+          onChange={handleContentChange}
+          style={{
+            flex: 1,
+            resize: "none",
+          }}
+          placeholder="Write your markdown here..."
+        />
+        <div id="editor-button-bar">
+          <button onClick={handleBold}>Bold</button>
+          <label>
             Image
             <input
               type="file"
@@ -193,41 +202,12 @@ export default function MarkdownEditor({
               style={{ display: "none" }}
             />
           </label>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            style={{
-              padding: "4px 12px",
-              opacity: isSaving ? 0.6 : 1,
-              cursor: isSaving ? "not-allowed" : "pointer",
-            }}
-          >
+          <button onClick={handleSave} disabled={isSaving}>
             {isSaving ? "Saving..." : "Save"}
           </button>
         </div>
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={handleContentChange}
-          style={{
-            flex: 1,
-            padding: "8px",
-            fontFamily: "monospace",
-            fontSize: "14px",
-            resize: "none",
-            border: "1px solid #ccc",
-          }}
-          placeholder="Write your markdown here..."
-        />
       </div>
-      <div
-        style={{
-          flex: 1,
-          padding: "8px",
-          border: "1px solid #ccc",
-          overflow: "auto",
-        }}
-      >
+      <div id="markdown-preview">
         <Markdown urlTransform={urlTransform}>{content}</Markdown>
       </div>
     </div>
