@@ -21,6 +21,7 @@ export default function Editor() {
   const [imageUrlMap, setImageUrlMap] = useState<Map<string, string>>(
     new Map()
   );
+  const [showTagsSection, setShowTagsSection] = useState(false);
 
   const handleImageUpload = async (files: File[]): Promise<string[]> => {
     try {
@@ -214,11 +215,9 @@ export default function Editor() {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        padding: "16px",
-        overflow: "hidden",
       }}
     >
-      <div style={{ flexShrink: 0 }}>
+      <div>
         {/* Status messages */}
         {error && (
           <div
@@ -249,11 +248,17 @@ export default function Editor() {
           </div>
         )}
 
-        {/* Tags field */}
-        <TagAutocomplete
-          selectedTags={selectedTags}
-          onTagsChange={setSelectedTags}
-        />
+        {/* Tags field with toggle */}
+        <button onClick={() => setShowTagsSection(!showTagsSection)}>
+          {showTagsSection ? "Hide" : "Show"} Tags
+        </button>
+
+        {showTagsSection && (
+          <TagAutocomplete
+            selectedTags={selectedTags}
+            onTagsChange={setSelectedTags}
+          />
+        )}
 
         {/* Location field */}
         <TagAutocomplete

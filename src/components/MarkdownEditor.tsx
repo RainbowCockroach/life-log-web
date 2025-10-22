@@ -68,42 +68,6 @@ export default function MarkdownEditor({
     onSave?.(content);
   };
 
-  const handleBold = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-
-    // Check if the selected text is already bold
-    const beforeSelection = content.substring(Math.max(0, start - 2), start);
-    const afterSelection = content.substring(
-      end,
-      Math.min(content.length, end + 2)
-    );
-
-    if (beforeSelection === "**" && afterSelection === "**") {
-      // Remove bold formatting
-      const newContent =
-        content.substring(0, start - 2) +
-        selectedText +
-        content.substring(end + 2);
-
-      setContent(newContent);
-      onChange?.(newContent);
-
-      // Restore focus and selection
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start - 2, end - 2);
-      }, 0);
-    } else {
-      // Add bold formatting
-      insertText("**", "**");
-    }
-  };
-
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -221,7 +185,6 @@ export default function MarkdownEditor({
           placeholder="Write your markdown here..."
         />
         <div id="editor-button-bar" style={{ padding: "8px 0" }}>
-          <button onClick={handleBold}>Bold</button>
           <label>
             Image
             <input
