@@ -169,6 +169,13 @@ export default function Editor() {
     setError(null);
     setSuccessMessage(null);
 
+    // Validate required fields
+    if (!locationTag) {
+      setError("Location is required");
+      setIsSaving(false);
+      return;
+    }
+
     try {
       // Generate search hint from content (remove markdown syntax for better search)
       const searchHint = content
@@ -265,8 +272,8 @@ export default function Editor() {
           selectedTags={locationTag ? [locationTag] : []}
           onTagsChange={(tags) => setLocationTag(tags[0] || null)}
           tagType="location"
-          label="Location"
-          placeholder="Enter location (optional)..."
+          label="Location *"
+          placeholder="Enter location (required)..."
           defaultColor="#10b981"
           singleSelect={true}
         />
