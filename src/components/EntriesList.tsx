@@ -71,6 +71,12 @@ export default function EntriesList() {
                 <div key={entry.id} style={{ marginBottom: "40px" }}>
                   <div style={{ fontSize: "14px", marginBottom: "8px" }}>
                     {formatDate(entry.createdAt)}
+                    {entry.location && (
+                      <span>
+                        {" — "}
+                        {entry.location.name}
+                      </span>
+                    )}
                     {entry.tags && entry.tags.length > 0 && (
                       <span>
                         {" — "}
