@@ -5,6 +5,7 @@ import {
   saveContent,
   uploadImages,
   getSignedUrls,
+  getLatestLocation,
   type Tag,
 } from "../services/api";
 import { processImages } from "../utils/imageUtils";
@@ -22,6 +23,23 @@ export default function Editor() {
     new Map()
   );
   const [showTagsSection, setShowTagsSection] = useState(false);
+
+  // Load the latest used location on component mount
+  useEffect(() => {
+    const loadLatestLocation = async () => {
+      try {
+        const latestLocation = await getLatestLocation();
+        if (latestLocation) {
+          setLocationTag(latestLocation);
+        }
+      } catch (error) {
+        console.error("Failed to load latest location:", error);
+        // Silently fail - user can still manually select a location
+      }
+    };
+
+    loadLatestLocation();
+  }, []);
 
   const handleImageUpload = async (files: File[]): Promise<string[]> => {
     try {

@@ -37,31 +37,28 @@ export default function MarkdownEditor({
   const handleContentChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setContent(newValue);
-    onChange?.(newValue);
+
+    // Convert single line breaks to markdown hard breaks (two spaces + newline)
+    // This ensures that when user presses Enter, it creates a new line in the rendered markdown
+    const markdownValue = convertToMarkdownLineBreaks(newValue);
+    onChange?.(markdownValue);
   };
 
-  const insertText = (before: string, after: string = "") => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
+  // Helper function to convert single newlines to markdown hard breaks
+  const convertToMarkdownLineBreaks = (text: string): string => {
+    // Split by double newlines to preserve paragraph breaks
+    const paragraphs = text.split("\n\n");
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-    const newText =
-      content.substring(0, start) +
-      before +
-      selectedText +
-      after +
-      content.substring(end);
+    // For each paragraph, add two spaces before single newlines
+    const processedParagraphs = paragraphs.map((paragraph) => {
+      // Split by single newlines
+      const lines = paragraph.split("\n");
+      // Join with two spaces + newline (markdown hard break)
+      return lines.join("  \n");
+    });
 
-    setContent(newText);
-    onChange?.(newText);
-
-    // Restore focus and selection
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + before.length, end + before.length);
-    }, 0);
+    // Rejoin paragraphs with double newlines
+    return processedParagraphs.join("\n\n");
   };
 
   const handleSave = () => {
@@ -98,7 +95,8 @@ export default function MarkdownEditor({
       content.substring(insertPosition);
 
     setContent(contentWithPlaceholders);
-    onChange?.(contentWithPlaceholders);
+    const markdownValue = convertToMarkdownLineBreaks(contentWithPlaceholders);
+    onChange?.(markdownValue);
 
     // Move cursor to after the placeholders so user can continue typing
     const newCursorPosition = insertPosition + placeholders.length + 2; // +2 for newlines
@@ -123,7 +121,8 @@ export default function MarkdownEditor({
               actualMarkdown
             );
           });
-          onChange?.(updatedContent);
+          const markdownValue = convertToMarkdownLineBreaks(updatedContent);
+          onChange?.(markdownValue);
           return updatedContent;
         });
       } catch (error) {
@@ -138,7 +137,10 @@ export default function MarkdownEditor({
               ""
             );
           });
-          onChange?.(contentWithoutPlaceholders);
+          const markdownValue = convertToMarkdownLineBreaks(
+            contentWithoutPlaceholders
+          );
+          onChange?.(markdownValue);
           return contentWithoutPlaceholders;
         });
       }
