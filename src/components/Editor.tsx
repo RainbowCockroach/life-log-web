@@ -21,6 +21,7 @@ export default function Editor() {
   const [imageUrlMap, setImageUrlMap] = useState<Map<string, string>>(
     new Map()
   );
+  const [showTagsSection, setShowTagsSection] = useState(false);
 
   const handleImageUpload = async (files: File[]): Promise<string[]> => {
     try {
@@ -168,6 +169,13 @@ export default function Editor() {
     setError(null);
     setSuccessMessage(null);
 
+    // Validate required fields
+    if (!locationTag) {
+      setError("Location is required");
+      setIsSaving(false);
+      return;
+    }
+
     try {
       // Generate search hint from content (remove markdown syntax for better search)
       const searchHint = content
@@ -214,11 +222,9 @@ export default function Editor() {
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        padding: "16px",
-        overflow: "hidden",
       }}
     >
-      <div style={{ flexShrink: 0 }}>
+      <div>
         {/* Status messages */}
         {error && (
           <div
@@ -249,19 +255,25 @@ export default function Editor() {
           </div>
         )}
 
-        {/* Tags field */}
-        <TagAutocomplete
-          selectedTags={selectedTags}
-          onTagsChange={setSelectedTags}
-        />
+        {/* Tags field with toggle */}
+        <button onClick={() => setShowTagsSection(!showTagsSection)}>
+          {showTagsSection ? "Hide" : "Show"} Tags
+        </button>
+
+        {showTagsSection && (
+          <TagAutocomplete
+            selectedTags={selectedTags}
+            onTagsChange={setSelectedTags}
+          />
+        )}
 
         {/* Location field */}
         <TagAutocomplete
           selectedTags={locationTag ? [locationTag] : []}
           onTagsChange={(tags) => setLocationTag(tags[0] || null)}
           tagType="location"
-          label="Location"
-          placeholder="Enter location (optional)..."
+          label="Location *"
+          placeholder="Enter location (required)..."
           defaultColor="#10b981"
           singleSelect={true}
         />

@@ -7,7 +7,7 @@
  * API Configuration
  */
 export const API_CONFIG = {
-  API_BASE_URL: "https://09176645.xyz/life-log-api",
+  API_BASE_URL: "http://localhost:3000",
   API_KEY: "vanvanvan",
   ENDPOINTS: {
     ENTRIES: "/entries",
