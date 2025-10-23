@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Markdown from "react-markdown";
-import { getSignedUrls, type SignedUrlResponse } from "../services/api";
-import { API_CONFIG } from "../config/constants";
+import { getSignedUrls, type SignedUrlResponse } from "../../services/api";
+import { API_CONFIG } from "../../config/constants";
 
 interface MarkdownViewerProps {
   content: string;

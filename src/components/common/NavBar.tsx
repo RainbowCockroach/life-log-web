@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { hasApiKey } from "../utils/apiKeyStorage";
+import { hasApiKey } from "../../utils/apiKeyStorage";
 
 function NavBar() {
   const noApiKey = !hasApiKey();
@@ -16,7 +16,12 @@ function NavBar() {
         <button>Tags</button>
       </Link>
       <Link to="/api-key">
-        <button style={{ background: noApiKey ? "#dc2626" : "", color: noApiKey ? "white" : "" }}>
+        <button
+          style={{
+            background: noApiKey ? "#dc2626" : "",
+            color: noApiKey ? "white" : "",
+          }}
+        >
           API Key
         </button>
       </Link>

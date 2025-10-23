@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import NavBar from "./components/NavBar";
+import { NavBar } from "./components/common";
 import EditorPage from "./pages/EditorPage";
 import EntriesPage from "./pages/EntriesPage";
 import TagsPage from "./pages/TagsPage";
@@ -8,7 +8,9 @@ import ApiKeyPage from "./pages/ApiKeyPage";
 function App() {
   return (
     <Router basename="/life-log-web">
-      <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      <div
+        style={{ display: "flex", flexDirection: "column", height: "100vh" }}
+      >
         <NavBar />
         <div style={{ flex: 1, overflow: "auto" }}>
           <Routes>

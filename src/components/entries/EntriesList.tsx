@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { fetchEntries, type Entry } from "../services/api";
-import MarkdownViewer from "./MarkdownViewer";
+import { fetchEntries, type Entry } from "../../services/api";
+import MarkdownViewer from "../common/MarkdownViewer";
+import Tag from "../common/Tag";
 
 export default function EntriesList() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -69,20 +70,21 @@ export default function EntriesList() {
             <div>
               {entries.map((entry) => (
                 <div key={entry.id} style={{ marginBottom: "40px" }}>
-                  <div style={{ fontSize: "14px", marginBottom: "8px" }}>
-                    {formatDate(entry.createdAt)}
-                    {entry.location && (
-                      <span>
-                        {" — "}
-                        {entry.location.name}
-                      </span>
-                    )}
-                    {entry.tags && entry.tags.length > 0 && (
-                      <span>
-                        {" — "}
-                        {entry.tags.map((tag) => tag.name).join(", ")}
-                      </span>
-                    )}
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      marginBottom: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                    }}
+                  >
+                    <span>{formatDate(entry.createdAt)}</span>
+                    {entry.location && <Tag tag={entry.location} />}
+                    {entry.tags &&
+                      entry.tags.length > 0 &&
+                      entry.tags.map((tag) => <Tag key={tag.id} tag={tag} />)}
                   </div>
                   <MarkdownViewer
                     content={entry.content}

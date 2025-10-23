@@ -1,4 +1,4 @@
-import EntriesList from "../components/EntriesList";
+import { EntriesList } from "../components/entries";
 
 function EntriesPage() {
   return <EntriesList />;
