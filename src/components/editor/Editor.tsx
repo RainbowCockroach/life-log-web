@@ -7,9 +7,9 @@ import {
   getSignedUrls,
   getLatestLocation,
   type Tag,
-} from "../services/api";
-import { processImages } from "../utils/imageUtils";
-import { API_CONFIG } from "../config/constants";
+} from "../../services/api";
+import { processImages } from "../../utils/imageUtils";
+import { API_CONFIG } from "../../config/constants";
 
 export default function Editor() {
   const [isSaving, setIsSaving] = useState(false);
