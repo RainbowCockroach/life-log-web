@@ -358,3 +358,34 @@ export async function createTag(tag: CreateTagRequest): Promise<Tag> {
     throw error;
   }
 }
+
+/**
+ * Gets the most recently used location tag
+ * @returns Promise with the most recent location tag or null
+ */
+export async function getLatestLocation(): Promise<Tag | null> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}/tags/suggestions/search?type=location&limit=1`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    const tags: Tag[] = await response.json();
+    // Return the first tag (most recently used) or null if no tags
+    return tags.length > 0 ? tags[0] : null;
+  } catch (error) {
+    console.error("Get latest location error:", error);
+    return null; // Return null on error instead of throwing
+  }
+}
