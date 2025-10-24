@@ -25,6 +25,7 @@ export interface Entry {
 }
 
 export interface SaveContentRequest {
+  id?: number;
   content: string;
   searchHint: string;
   mediaPaths?: string[];
@@ -387,5 +388,110 @@ export async function getLatestLocation(): Promise<Tag | null> {
   } catch (error) {
     console.error("Get latest location error:", error);
     return null; // Return null on error instead of throwing
+  }
+}
+
+/**
+ * Fetches a single entry by ID
+ * @param id - Entry ID to fetch
+ * @returns Promise with the entry
+ */
+export async function fetchEntry(id: number): Promise<Entry> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}/${id}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Fetch entry error:", error);
+    throw error;
+  }
+}
+
+export interface UpdateEntryRequest {
+  content?: string;
+  searchHint?: string;
+  mediaPaths?: string[];
+  locationId?: number | null;
+  tagIds?: number[];
+  isHighlighted?: boolean;
+}
+
+/**
+ * Updates an existing entry
+ * @param id - Entry ID to update
+ * @param request - The entry data to update
+ * @returns Promise with updated entry
+ */
+export async function updateEntry(
+  id: number,
+  request: UpdateEntryRequest
+): Promise<Entry> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}/${id}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": getStoredApiKey(),
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Update entry error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes an entry by ID
+ * @param id - Entry ID to delete
+ * @returns Promise with delete response
+ */
+export async function deleteEntry(id: number): Promise<{ message: string }> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}/${id}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "DELETE",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Delete entry error:", error);
+    throw error;
   }
 }

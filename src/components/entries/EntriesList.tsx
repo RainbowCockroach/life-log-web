@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
-import { fetchEntries, type Entry } from "../../services/api";
+import { fetchEntries, deleteEntry, type Entry } from "../../services/api";
 import MarkdownViewer from "../common/MarkdownViewer";
 import Tag from "../common/Tag";
+import { useNavigate } from "react-router-dom";
 
 export default function EntriesList() {
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const pageSize = 10;
 
   useEffect(() => {
@@ -56,8 +59,40 @@ export default function EntriesList() {
     });
   };
 
+  const handleEdit = (entryId: number) => {
+    navigate(`/edit/${entryId}`);
+  };
+
+  const handleDelete = async (entryId: number) => {
+    if (!confirm("Are you sure you want to delete this entry?")) {
+      return;
+    }
+
+    try {
+      await deleteEntry(entryId);
+      // Reload entries after deletion
+      const response = await fetchEntries(page, pageSize);
+      setEntries(response.entries);
+      setTotal(response.total);
+      setHasMore(response.hasMore);
+      // If current page is empty and not first page, go back one page
+      if (response.entries.length === 0 && page > 1) {
+        setPage(page - 1);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete entry");
+      console.error("Error deleting entry:", err);
+    }
+  };
+
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "40px 20px" }}>
+      <div style={{ marginBottom: "20px" }}>
+        <button onClick={() => setEditMode(!editMode)}>
+          {editMode ? "Exit Edit Mode" : "Edit Mode"}
+        </button>
+      </div>
+
       {error && <div>Error: {error}</div>}
 
       {loading ? (
@@ -85,6 +120,19 @@ export default function EntriesList() {
                     {entry.tags &&
                       entry.tags.length > 0 &&
                       entry.tags.map((tag) => <Tag key={tag.id} tag={tag} />)}
+                    {editMode && (
+                      <>
+                        <button
+                          onClick={() => handleEdit(entry.id)}
+                          style={{ marginLeft: "auto" }}
+                        >
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(entry.id)}>
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </div>
                   <MarkdownViewer
                     content={entry.content}
