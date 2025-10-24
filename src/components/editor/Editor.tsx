@@ -6,12 +6,19 @@ import {
   uploadImages,
   getSignedUrls,
   getLatestLocation,
+  fetchEntry,
+  updateEntry,
   type Tag,
 } from "../../services/api";
 import { processImages } from "../../utils/imageUtils";
 import { API_CONFIG } from "../../config/constants";
 
-export default function Editor() {
+interface EditorProps {
+  entryId?: number;
+  onSaveSuccess?: () => void;
+}
+
+export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -23,23 +30,48 @@ export default function Editor() {
     new Map()
   );
   const [showTagsSection, setShowTagsSection] = useState(false);
+  const [showDateTimeSection, setShowDateTimeSection] = useState(false);
+  const [customDateTime, setCustomDateTime] = useState<string>("");
 
-  // Load the latest used location on component mount
+  // Load entry data if in edit mode, otherwise load latest location
   useEffect(() => {
-    const loadLatestLocation = async () => {
-      try {
-        const latestLocation = await getLatestLocation();
-        if (latestLocation) {
-          setLocationTag(latestLocation);
+    const loadEntryData = async () => {
+      if (entryId) {
+        // Edit mode: load existing entry
+        try {
+          const entry = await fetchEntry(entryId);
+          setContent(entry.content);
+          setLocationTag(entry.location || null);
+          // Convert simple tag objects to full Tag objects
+          setSelectedTags(
+            (entry.tags || []).map((tag) => ({
+              ...tag,
+              searchHint: "",
+              type: "tag",
+              config: {},
+            }))
+          );
+          setUploadedImagePaths(entry.mediaPaths || []);
+        } catch (error) {
+          console.error("Failed to load entry:", error);
+          setError("Failed to load entry for editing");
         }
-      } catch (error) {
-        console.error("Failed to load latest location:", error);
-        // Silently fail - user can still manually select a location
+      } else {
+        // Create mode: load latest location
+        try {
+          const latestLocation = await getLatestLocation();
+          if (latestLocation) {
+            setLocationTag(latestLocation);
+          }
+        } catch (error) {
+          console.error("Failed to load latest location:", error);
+          // Silently fail - user can still manually select a location
+        }
       }
     };
 
-    loadLatestLocation();
-  }, []);
+    loadEntryData();
+  }, [entryId]);
 
   const handleImageUpload = async (files: File[]): Promise<string[]> => {
     try {
@@ -197,32 +229,61 @@ export default function Editor() {
     try {
       // Generate search hint from content (remove markdown syntax for better search)
       const searchHint = content
-        .replace(/[#*_~`\[\]()]/g, " ")
+        .replace(/[#*_~`[\]()]/g, " ")
         .replace(/\s+/g, " ")
         .trim()
         .toLowerCase();
 
-      const response = await saveContent({
-        content,
-        searchHint,
-        locationId: locationTag?.id,
-        tagIds:
-          selectedTags.length > 0
-            ? selectedTags.map((tag) => tag.id)
-            : undefined,
-        mediaPaths:
-          uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
-      });
-
-      if (response.success) {
-        setSuccessMessage(`${response.message} (ID: ${response.id})`);
-        console.log("Save successful:", response);
-        // Clear uploaded images, location, and tags after successful save
-        setUploadedImagePaths([]);
-        setLocationTag(null);
-        setSelectedTags([]);
+      if (entryId) {
+        // Update existing entry
+        await updateEntry(entryId, {
+          content,
+          searchHint,
+          locationId: locationTag?.id,
+          tagIds:
+            selectedTags.length > 0
+              ? selectedTags.map((tag) => tag.id)
+              : undefined,
+          mediaPaths:
+            uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
+        });
+        setSuccessMessage(`Entry updated successfully (ID: ${entryId})`);
+        console.log("Update successful");
+        if (onSaveSuccess) {
+          onSaveSuccess();
+        }
       } else {
-        setError("Failed to save content");
+        // Create new entry
+        // Convert custom datetime to timestamp if provided
+        let customId: number | undefined;
+        if (customDateTime) {
+          customId = new Date(customDateTime).getTime();
+        }
+
+        const response = await saveContent({
+          id: customId,
+          content,
+          searchHint,
+          locationId: locationTag?.id,
+          tagIds:
+            selectedTags.length > 0
+              ? selectedTags.map((tag) => tag.id)
+              : undefined,
+          mediaPaths:
+            uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
+        });
+
+        if (response.success) {
+          setSuccessMessage(`${response.message} (ID: ${response.id})`);
+          console.log("Save successful:", response);
+          // Clear form after successful save
+          setUploadedImagePaths([]);
+          setLocationTag(null);
+          setSelectedTags([]);
+          setCustomDateTime("");
+        } else {
+          setError("Failed to save content");
+        }
       }
     } catch (err) {
       setError(
@@ -283,6 +344,32 @@ export default function Editor() {
             selectedTags={selectedTags}
             onTagsChange={setSelectedTags}
           />
+        )}
+
+        {/* Custom DateTime field with toggle */}
+        {!entryId && (
+          <>
+            <button
+              onClick={() => setShowDateTimeSection(!showDateTimeSection)}
+            >
+              {showDateTimeSection ? "Hide" : "Show"} Date/Time
+            </button>
+
+            {showDateTimeSection && (
+              <div>
+                <label htmlFor="custom-datetime">Entry Date/Time: </label>
+                <input
+                  id="custom-datetime"
+                  type="datetime-local"
+                  value={customDateTime}
+                  onChange={(e) => setCustomDateTime(e.target.value)}
+                />
+                {customDateTime && (
+                  <button onClick={() => setCustomDateTime("")}>Clear</button>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {/* Location field */}

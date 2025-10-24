@@ -4,6 +4,7 @@ import EditorPage from "./pages/EditorPage";
 import EntriesPage from "./pages/EntriesPage";
 import TagsPage from "./pages/TagsPage";
 import ApiKeyPage from "./pages/ApiKeyPage";
+import EditEntryPage from "./pages/EditEntryPage";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Routes>
             <Route path="/" element={<EditorPage />} />
             <Route path="/entries" element={<EntriesPage />} />
+            <Route path="/edit/:id" element={<EditEntryPage />} />
             <Route path="/tags" element={<TagsPage />} />
             <Route path="/api-key" element={<ApiKeyPage />} />
           </Routes>
