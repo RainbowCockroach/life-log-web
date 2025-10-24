@@ -7,7 +7,7 @@ import { API_CONFIG } from "../config/constants";
  * @returns The API key
  */
 function getStoredApiKey(): string {
-  return getApiKey() || API_CONFIG.API_KEY;
+  return getApiKey() || "";
 }
 
 export interface Entry {
