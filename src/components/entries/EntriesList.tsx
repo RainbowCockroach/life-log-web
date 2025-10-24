@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchEntries, deleteEntry, type Entry } from "../../services/api";
 import MarkdownViewer from "../common/MarkdownViewer";
-import Tag from "../common/Tag";
 import { useNavigate } from "react-router-dom";
 
 export default function EntriesList() {
@@ -54,9 +53,29 @@ export default function EntriesList() {
       year: "numeric",
       month: "short",
       day: "numeric",
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const groupEntriesByDate = (entries: Entry[]) => {
+    const groups: { [date: string]: Entry[] } = {};
+
+    entries.forEach((entry) => {
+      const dateKey = formatDate(entry.createdAt);
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(entry);
+    });
+
+    return groups;
   };
 
   const handleEdit = (entryId: number) => {
@@ -103,43 +122,49 @@ export default function EntriesList() {
             <div>No entries found</div>
           ) : (
             <div>
-              {entries.map((entry) => (
-                <div key={entry.id} style={{ marginBottom: "40px" }}>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      marginBottom: "8px",
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: "8px",
-                    }}
-                  >
-                    <span>{formatDate(entry.createdAt)}</span>
-                    {entry.location && <Tag tag={entry.location} />}
-                    {entry.tags &&
-                      entry.tags.length > 0 &&
-                      entry.tags.map((tag) => <Tag key={tag.id} tag={tag} />)}
-                    {editMode && (
-                      <>
-                        <button
-                          onClick={() => handleEdit(entry.id)}
-                          style={{ marginLeft: "auto" }}
+              {Object.entries(groupEntriesByDate(entries)).map(
+                ([date, dateEntries]) => (
+                  <div key={date} style={{ marginBottom: "40px" }}>
+                    <h3>{date}</h3>
+                    {dateEntries.map((entry) => (
+                      <div key={entry.id} style={{ marginBottom: "32px" }}>
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            marginBottom: "8px",
+                            display: "flex",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                            gap: "8px",
+                          }}
                         >
-                          Edit
-                        </button>
-                        <button onClick={() => handleDelete(entry.id)}>
-                          Delete
-                        </button>
-                      </>
-                    )}
+                          <span>{formatTime(entry.createdAt)}</span>
+                          {entry.location && (
+                            <span>| {entry.location.name}</span>
+                          )}
+                          {editMode && (
+                            <>
+                              <button
+                                onClick={() => handleEdit(entry.id)}
+                                style={{ marginLeft: "auto" }}
+                              >
+                                Edit
+                              </button>
+                              <button onClick={() => handleDelete(entry.id)}>
+                                Delete
+                              </button>
+                            </>
+                          )}
+                        </div>
+                        <MarkdownViewer
+                          content={entry.content}
+                          mediaPaths={entry.mediaPaths}
+                        />
+                      </div>
+                    ))}
                   </div>
-                  <MarkdownViewer
-                    content={entry.content}
-                    mediaPaths={entry.mediaPaths}
-                  />
-                </div>
-              ))}
+                )
+              )}
             </div>
           )}
 
