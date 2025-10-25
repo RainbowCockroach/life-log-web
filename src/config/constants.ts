@@ -22,5 +22,5 @@ export const API_CONFIG = {
  */
 export const MEDIA_CONFIG = {
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-  ACCEPTED_IMAGE_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+  ACCEPTED_IMAGE_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"],
 } as const;

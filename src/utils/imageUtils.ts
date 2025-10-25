@@ -1,4 +1,5 @@
 import imageCompression from 'browser-image-compression';
+import heic2any from 'heic2any';
 
 export interface ProcessedImage {
   file: File;
@@ -28,6 +29,64 @@ export function generateUniqueFilename(originalFile: File): string {
     .substring(0, 30); // Limit length
 
   return `${timestamp}-${randomStr}-${sanitized}.${ext}`;
+}
+
+/**
+ * Checks if a file is in HEIC/HEIF format
+ * @param file - File to check
+ */
+function isHEIC(file: File): boolean {
+  const fileName = file.name.toLowerCase();
+  const fileType = file.type.toLowerCase();
+  return (
+    fileName.endsWith('.heic') ||
+    fileName.endsWith('.heif') ||
+    fileType === 'image/heic' ||
+    fileType === 'image/heif'
+  );
+}
+
+/**
+ * Converts HEIC/HEIF image to JPEG
+ * @param file - HEIC/HEIF file to convert
+ */
+async function convertHEICtoJPEG(file: File): Promise<File> {
+  console.log(`Converting HEIC file: ${file.name}`);
+
+  try {
+    // Convert HEIC to JPEG blob
+    const convertedBlob = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.9, // High quality for initial conversion
+    });
+
+    // heic2any can return Blob or Blob[], handle both cases
+    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+
+    // Create new filename with .jpg extension
+    const originalNameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+    const newFileName = `${originalNameWithoutExt}.jpg`;
+
+    // Create a new File object
+    const convertedFile = new File([blob], newFileName, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+
+    console.log(
+      `HEIC conversion successful: ${file.name} → ${newFileName} (${(
+        convertedFile.size /
+        1024 /
+        1024
+      ).toFixed(2)}MB)`
+    );
+
+    return convertedFile;
+  } catch (error) {
+    console.error('HEIC conversion failed:', error);
+    throw new Error(`Failed to convert HEIC image: ${file.name}`);
+  }
 }
 
 /**
@@ -69,7 +128,7 @@ export async function compressImage(
 }
 
 /**
- * Processes multiple image files: compress and rename
+ * Processes multiple image files: convert HEIC if needed, compress, and rename
  * @param files - Array of image files to process
  * @param urlPrefix - Prefix to add to the URL (e.g., '/uploads/', 'https://cdn.example.com/')
  */
@@ -80,13 +139,25 @@ export async function processImages(
   const processed: ProcessedImage[] = [];
 
   for (const file of files) {
-    // Compress the image
-    const compressedFile = await compressImage(file);
+    // Step 1: Convert HEIC to JPEG if needed
+    let fileToProcess = file;
+    if (isHEIC(file)) {
+      try {
+        fileToProcess = await convertHEICtoJPEG(file);
+      } catch (error) {
+        console.error(`Failed to convert HEIC file: ${file.name}`, error);
+        // Re-throw to let the caller handle it
+        throw error;
+      }
+    }
 
-    // Generate unique filename
-    const newName = generateUniqueFilename(file);
+    // Step 2: Compress the image
+    const compressedFile = await compressImage(fileToProcess);
 
-    // Create new File object with new name
+    // Step 3: Generate unique filename (using the converted file if applicable)
+    const newName = generateUniqueFilename(fileToProcess);
+
+    // Step 4: Create new File object with new name
     const renamedFile = new File([compressedFile], newName, {
       type: compressedFile.type,
     });
