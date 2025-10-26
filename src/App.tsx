@@ -13,7 +13,7 @@ function App() {
         style={{ display: "flex", flexDirection: "column", height: "100vh" }}
       >
         <NavBar />
-        <div style={{ flex: 1, overflow: "auto" }}>
+        <div>
           <Routes>
             <Route path="/" element={<EditorPage />} />
             <Route path="/entries" element={<EntriesPage />} />
