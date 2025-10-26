@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchEntries, deleteEntry, type Entry } from "../../services/api";
 import MarkdownViewer from "../common/MarkdownViewer";
 import { useNavigate } from "react-router-dom";
+import "../../themes/default.css";
 
 export default function EntriesList() {
   const navigate = useNavigate();
@@ -105,7 +106,7 @@ export default function EntriesList() {
   };
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "40px 20px" }}>
+    <div className="page-container">
       <div style={{ marginBottom: "20px" }}>
         <button onClick={() => setEditMode(!editMode)}>
           {editMode ? "Exit Edit Mode" : "Edit Mode"}
@@ -124,20 +125,11 @@ export default function EntriesList() {
             <div>
               {Object.entries(groupEntriesByDate(entries)).map(
                 ([date, dateEntries]) => (
-                  <div key={date} style={{ marginBottom: "40px" }}>
-                    <h3>{date}</h3>
+                  <div key={date} className="day-group">
+                    <h3 className="day-group-date">{date}</h3>
                     {dateEntries.map((entry) => (
-                      <div key={entry.id} style={{ marginBottom: "32px" }}>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            marginBottom: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            flexWrap: "wrap",
-                            gap: "8px",
-                          }}
-                        >
+                      <div key={entry.id} className="entry">
+                        <div className="entry-where-when">
                           <span>{formatTime(entry.createdAt)}</span>
                           {entry.location && (
                             <span>| {entry.location.name}</span>

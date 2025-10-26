@@ -1,0 +1,44 @@
+/* UI */
+.page-container {
+  margin: 0 auto;
+  flex: 1;
+  overflow: auto;
+  max-width: 100%;
+}
+/* Entry view */
+/* Day group container */
+.day-group {
+  margin-bottom: 40px;
+}
+.day-group-date {
+}
+/* Entry view: entries */
+.entry {
+  margin-bottom: 32px;
+  width: 100%;
+  overflow: hidden;
+  word-wrap: break-word;
+}
+.entry img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+/* Entry view: time tag */
+.entry-where-when {
+  font-size: 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.entry-locations {
+}
+.entry-location {
+}
+.entry-tags {
+}
+.entry-tag {
+}
