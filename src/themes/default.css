@@ -1,3 +1,9 @@
+:root {
+  --text-color: #000000;
+  --secondary-color: #929292;
+  --paper-color: #ffffff;
+}
+
 /* UI */
 .page-container {
   margin: 0 auto;
@@ -11,34 +17,47 @@
   margin-bottom: 40px;
 }
 .day-group-date {
+  color: var(--secondary-color);
 }
 /* Entry view: entries */
-.entry {
-  margin-bottom: 32px;
+.entry-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1em;
+  margin-bottom: 0.5em;
+  align-items: start;
+}
+.entry-time {
+  color: var(--secondary-color);
+  font-size: 14px;
+  white-space: nowrap;
+  padding-top: 0.4em;
+}
+.entry-content {
   width: 100%;
   overflow: hidden;
   word-wrap: break-word;
 }
-.entry img {
+.entry-content p {
+  margin-top: 0;
+  margin-bottom: 0.1em;
+  line-height: 1.6;
+  color: var(--text-color);
+}
+.entry-content img {
   max-width: 100%;
   height: auto;
   object-fit: contain;
   display: block;
+  border: solid 1px var(--secondary-color);
 }
-/* Entry view: time tag */
-.entry-where-when {
-  font-size: 14px;
-  margin-bottom: 8px;
+.entry-actions {
+  margin-top: 0.5em;
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.entry-locations {
+  gap: 0.5em;
 }
 .entry-location {
-}
-.entry-tags {
-}
-.entry-tag {
+  color: var(--secondary-color);
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
 }

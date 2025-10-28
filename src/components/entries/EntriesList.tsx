@@ -127,33 +127,46 @@ export default function EntriesList() {
                 ([date, dateEntries]) => (
                   <div key={date} className="day-group">
                     <h3 className="day-group-date">{date}</h3>
-                    {dateEntries.map((entry) => (
-                      <div key={entry.id} className="entry">
-                        <div className="entry-where-when">
-                          <span>{formatTime(entry.createdAt)}</span>
-                          {entry.location && (
-                            <span>| {entry.location.name}</span>
+                    {dateEntries.map((entry, index) => {
+                      const prevEntry =
+                        index > 0 ? dateEntries[index - 1] : null;
+                      const showLocation =
+                        !prevEntry ||
+                        entry.location?.name !== prevEntry.location?.name;
+
+                      return (
+                        <div key={entry.id}>
+                          {showLocation && entry.location && (
+                            <h4 className="entry-location">
+                              {entry.location.name}
+                            </h4>
                           )}
-                          {editMode && (
-                            <>
-                              <button
-                                onClick={() => handleEdit(entry.id)}
-                                style={{ marginLeft: "auto" }}
-                              >
-                                Edit
-                              </button>
-                              <button onClick={() => handleDelete(entry.id)}>
-                                Delete
-                              </button>
-                            </>
-                          )}
+                          <div className="entry-row">
+                            <div className="entry-time">
+                              {formatTime(entry.createdAt)}
+                            </div>
+                            <div className="entry-content">
+                              <MarkdownViewer
+                                content={entry.content}
+                                mediaPaths={entry.mediaPaths}
+                              />
+                              {editMode && (
+                                <div className="entry-actions">
+                                  <button onClick={() => handleEdit(entry.id)}>
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(entry.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <MarkdownViewer
-                          content={entry.content}
-                          mediaPaths={entry.mediaPaths}
-                        />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )
               )}
