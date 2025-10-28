@@ -1,6 +1,7 @@
 :root {
   --text-color: #000000;
-  --secondary-color: #929292;
+  --secondary-color: #777676;
+  --thirdary-color: #aaaaaa;
   --paper-color: #ffffff;
 }
 
@@ -18,23 +19,18 @@
 }
 .day-group-date {
   color: var(--secondary-color);
+  font-style: italic;
 }
 /* Entry view: entries */
-.entry-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 1em;
+.entry {
   margin-bottom: 0.5em;
-  align-items: start;
 }
 .entry-time {
-  color: var(--secondary-color);
+  color: var(--thirdary-color);
   font-size: 14px;
-  white-space: nowrap;
-  padding-top: 0.4em;
 }
 .entry-content {
-  width: 100%;
+  margin-left: 1em;
   overflow: hidden;
   word-wrap: break-word;
 }
@@ -57,7 +53,8 @@
   gap: 0.5em;
 }
 .entry-location {
-  color: var(--secondary-color);
+  color: var(--thirdary-color);
+  font-weight: normal;
   margin-top: 0.3em;
   margin-bottom: 0.3em;
 }

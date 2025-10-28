@@ -141,7 +141,7 @@ export default function EntriesList() {
                               {entry.location.name}
                             </h4>
                           )}
-                          <div className="entry-row">
+                          <div className="entry">
                             <div className="entry-time">
                               {formatTime(entry.createdAt)}
                             </div>
