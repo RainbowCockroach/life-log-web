@@ -1,13 +1,22 @@
 import { useState, useEffect } from "react";
 import { fetchEntries, deleteEntry, type Entry } from "../../services/api";
 import MarkdownViewer from "../common/MarkdownViewer";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import "../../themes/default.css";
 
 export default function EntriesList() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Get page from URL params, default to 1 if not present or invalid
+  const getPageFromParams = () => {
+    const pageParam = searchParams.get("page");
+    const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
+    return isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
+  };
+
+  const page = getPageFromParams();
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,15 +45,25 @@ export default function EntriesList() {
     loadEntries();
   }, [page]);
 
+  // Validate page number and redirect if invalid
+  useEffect(() => {
+    if (total > 0) {
+      const maxPage = Math.ceil(total / pageSize);
+      if (page > maxPage) {
+        setSearchParams({ page: maxPage.toString() });
+      }
+    }
+  }, [total, page, pageSize, setSearchParams]);
+
   const handlePreviousPage = () => {
     if (page > 1) {
-      setPage(page - 1);
+      setSearchParams({ page: (page - 1).toString() });
     }
   };
 
   const handleNextPage = () => {
     if (hasMore) {
-      setPage(page + 1);
+      setSearchParams({ page: (page + 1).toString() });
     }
   };
 
@@ -97,7 +116,7 @@ export default function EntriesList() {
       setHasMore(response.hasMore);
       // If current page is empty and not first page, go back one page
       if (response.entries.length === 0 && page > 1) {
-        setPage(page - 1);
+        setSearchParams({ page: (page - 1).toString() });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete entry");
@@ -176,13 +195,13 @@ export default function EntriesList() {
           {total > 0 && (
             <div style={{ marginTop: "40px", textAlign: "center" }}>
               <button onClick={handlePreviousPage} disabled={page === 1}>
-                Previous
+                ᐊᐊᐊ
               </button>
               <span style={{ margin: "0 20px" }}>
                 Page {page} of {Math.ceil(total / pageSize)}
               </span>
               <button onClick={handleNextPage} disabled={!hasMore}>
-                Next
+                ᐅᐅᐅ
               </button>
             </div>
           )}
