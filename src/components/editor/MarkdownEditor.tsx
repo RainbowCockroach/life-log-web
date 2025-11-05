@@ -10,6 +10,23 @@ interface MarkdownEditorProps {
   urlTransform?: (url: string) => string;
 }
 
+// Helper function to convert single newlines to markdown hard breaks
+const convertToMarkdownLineBreaks = (text: string): string => {
+  // Split by double newlines to preserve paragraph breaks
+  const paragraphs = text.split("\n\n");
+
+  // For each paragraph, add two spaces before single newlines
+  const processedParagraphs = paragraphs.map((paragraph) => {
+    // Split by single newlines
+    const lines = paragraph.split("\n");
+    // Join with two spaces + newline (markdown hard break)
+    return lines.join("  \n");
+  });
+
+  // Rejoin paragraphs with double newlines
+  return processedParagraphs.join("\n\n");
+};
+
 export default function MarkdownEditor({
   initialValue = "",
   onImageUpload,
@@ -21,10 +38,34 @@ export default function MarkdownEditor({
   const [content, setContent] = useState(initialValue);
   const [showPreview, setShowPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isInitialLoad = useRef(true);
+  const lastInitialValue = useRef(initialValue);
 
-  // Update content when initialValue changes (e.g., loading a saved entry)
+  // Only update content when initialValue changes from external sources (like loading a saved entry)
+  // Avoid updating during normal typing to prevent cursor jumping
   useEffect(() => {
-    setContent(initialValue);
+    // On initial mount, always set the content
+    if (isInitialLoad.current) {
+      setContent(initialValue);
+      lastInitialValue.current = initialValue;
+      isInitialLoad.current = false;
+      return;
+    }
+
+    // Only update if the initialValue is significantly different from what we last saw
+    // This prevents the cursor jumping issue during normal typing
+    if (initialValue !== lastInitialValue.current) {
+      // Check if this is a real external change (like loading a different entry)
+      // vs. just the processed version of what the user typed
+      const currentProcessed = convertToMarkdownLineBreaks(content);
+
+      // If the new initialValue is very different from our current content,
+      // it's likely an external change (like loading a saved entry)
+      if (initialValue !== currentProcessed && initialValue !== content) {
+        setContent(initialValue);
+        lastInitialValue.current = initialValue;
+      }
+    }
   }, [initialValue]);
 
   // Auto-focus textarea on mount
@@ -44,22 +85,6 @@ export default function MarkdownEditor({
     onChange?.(markdownValue);
   };
 
-  // Helper function to convert single newlines to markdown hard breaks
-  const convertToMarkdownLineBreaks = (text: string): string => {
-    // Split by double newlines to preserve paragraph breaks
-    const paragraphs = text.split("\n\n");
-
-    // For each paragraph, add two spaces before single newlines
-    const processedParagraphs = paragraphs.map((paragraph) => {
-      // Split by single newlines
-      const lines = paragraph.split("\n");
-      // Join with two spaces + newline (markdown hard break)
-      return lines.join("  \n");
-    });
-
-    // Rejoin paragraphs with double newlines
-    return processedParagraphs.join("\n\n");
-  };
 
   const handleSave = () => {
     onSave?.(content);
