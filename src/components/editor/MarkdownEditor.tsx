@@ -206,8 +206,10 @@ export default function MarkdownEditor({
             padding: "12px",
             fontSize: "16px",
             lineHeight: "1.6",
-            border: "1px solid #ccc",
+            border: "1px solid var(--border-color)",
             borderRadius: "4px",
+            backgroundColor: "var(--input-background)",
+            color: "var(--text-color)",
           }}
           placeholder="Write your markdown here..."
         />
@@ -236,10 +238,12 @@ export default function MarkdownEditor({
           style={{
             flex: 1,
             overflowY: "auto",
-            border: "1px solid #ccc",
+            border: "1px solid var(--border-color)",
             borderRadius: "4px",
             padding: "12px",
             minHeight: 0,
+            backgroundColor: "var(--paper-color)",
+            color: "var(--text-color)",
           }}
         >
           <style>{`

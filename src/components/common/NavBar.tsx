@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { hasApiKey } from "../../utils/apiKeyStorage";
+import { ThemeToggle } from "./ThemeToggle";
 
 function NavBar() {
   const noApiKey = !hasApiKey();
@@ -25,6 +26,7 @@ function NavBar() {
           API Key
         </button>
       </Link>
+      <ThemeToggle variant="toggle" showLabels={false} />
     </nav>
   );
 }

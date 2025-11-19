@@ -310,10 +310,10 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
             style={{
               padding: "8px",
               marginBottom: "8px",
-              backgroundColor: "#fee",
-              border: "1px solid #fcc",
+              backgroundColor: "var(--error-background)",
+              border: "1px solid var(--error-border)",
               borderRadius: "4px",
-              color: "#c33",
+              color: "var(--error-text)",
             }}
           >
             Error: {error}
@@ -324,10 +324,10 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
             style={{
               padding: "8px",
               marginBottom: "8px",
-              backgroundColor: "#efe",
-              border: "1px solid #cfc",
+              backgroundColor: "var(--success-background)",
+              border: "1px solid var(--success-border)",
               borderRadius: "4px",
-              color: "#3c3",
+              color: "var(--success-text)",
             }}
           >
             {successMessage}
@@ -357,12 +357,17 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
 
             {showDateTimeSection && (
               <div>
-                <label htmlFor="custom-datetime">Entry Date/Time: </label>
+                <label htmlFor="custom-datetime" style={{ color: "var(--text-color)" }}>Entry Date/Time: </label>
                 <input
                   id="custom-datetime"
                   type="datetime-local"
                   value={customDateTime}
                   onChange={(e) => setCustomDateTime(e.target.value)}
+                  style={{
+                    backgroundColor: "var(--input-background)",
+                    color: "var(--text-color)",
+                    border: "1px solid var(--border-color)"
+                  }}
                 />
                 {customDateTime && (
                   <button onClick={() => setCustomDateTime("")}>Clear</button>
