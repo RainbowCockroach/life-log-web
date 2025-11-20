@@ -210,6 +210,13 @@ export interface FetchEntriesResponse {
   hasMore: boolean;
 }
 
+export interface SearchEntriesOptions {
+  query?: string;
+  tagIds?: number[];
+  page?: number;
+  pageSize?: number;
+}
+
 /**
  * Fetches entries with pagination
  * @param page - Page number (1-indexed)
@@ -220,7 +227,34 @@ export async function fetchEntries(
   page: number = 1,
   pageSize: number = 10
 ): Promise<FetchEntriesResponse> {
-  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}`;
+  return searchEntries({ page, pageSize });
+}
+
+/**
+ * Searches entries with optional query and tag filters
+ * @param options - Search options including query, tagIds, and pagination
+ * @returns Promise with filtered and paginated entries
+ */
+export async function searchEntries(
+  options: SearchEntriesOptions = {}
+): Promise<FetchEntriesResponse> {
+  const { query, tagIds, page = 1, pageSize = 10 } = options;
+
+  // Use search endpoint if we have search criteria, otherwise use regular endpoint
+  const useSearchEndpoint = query || (tagIds && tagIds.length > 0);
+  let apiUrl: string;
+
+  if (useSearchEndpoint) {
+    apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}/search`;
+    const searchParams = new URLSearchParams();
+    if (query) searchParams.append('q', query);
+    if (tagIds && tagIds.length > 0) searchParams.append('tagIds', tagIds.join(','));
+    if (searchParams.toString()) {
+      apiUrl += `?${searchParams.toString()}`;
+    }
+  } else {
+    apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}`;
+  }
 
   try {
     const response = await fetch(apiUrl, {
@@ -239,7 +273,7 @@ export async function fetchEntries(
 
     const allEntries: Entry[] = await response.json();
 
-    // Implement client-side pagination since API doesn't support it yet
+    // Implement client-side pagination
     const total = allEntries.length;
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
@@ -254,7 +288,7 @@ export async function fetchEntries(
       hasMore,
     };
   } catch (error) {
-    console.error("Fetch entries error:", error);
+    console.error("Search entries error:", error);
     throw error;
   }
 }

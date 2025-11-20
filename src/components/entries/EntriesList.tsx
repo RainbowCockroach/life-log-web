@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchEntries, deleteEntry, type Entry } from "../../services/api";
+import { searchEntries, deleteEntry, type Entry } from "../../services/api";
 import MarkdownViewer from "../common/MarkdownViewer";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "../../themes/default.css";
@@ -8,11 +8,15 @@ export default function EntriesList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Get page from URL params, default to 1 if not present or invalid
+  // Get page and search query from URL params
   const getPageFromParams = () => {
     const pageParam = searchParams.get("page");
     const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
     return isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
+  };
+
+  const getSearchQueryFromParams = () => {
+    return searchParams.get("q") || "";
   };
 
   const page = getPageFromParams();
@@ -22,6 +26,7 @@ export default function EntriesList() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(getSearchQueryFromParams());
   const pageSize = 10;
 
   useEffect(() => {
@@ -30,7 +35,11 @@ export default function EntriesList() {
       setError(null);
 
       try {
-        const response = await fetchEntries(page, pageSize);
+        const response = await searchEntries({
+          query: searchQuery || undefined,
+          page,
+          pageSize,
+        });
         setEntries(response.entries);
         setTotal(response.total);
         setHasMore(response.hasMore);
@@ -43,27 +52,41 @@ export default function EntriesList() {
     };
 
     loadEntries();
-  }, [page]);
+  }, [page, searchQuery]);
+
+  // Sync search query state with URL parameters
+  useEffect(() => {
+    const queryFromUrl = getSearchQueryFromParams();
+    if (queryFromUrl !== searchQuery) {
+      setSearchQuery(queryFromUrl);
+    }
+  }, [searchParams, searchQuery]);
 
   // Validate page number and redirect if invalid
   useEffect(() => {
     if (total > 0) {
       const maxPage = Math.ceil(total / pageSize);
       if (page > maxPage) {
-        setSearchParams({ page: maxPage.toString() });
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set("page", maxPage.toString());
+        setSearchParams(newParams);
       }
     }
-  }, [total, page, pageSize, setSearchParams]);
+  }, [total, page, pageSize, setSearchParams, searchParams]);
 
   const handlePreviousPage = () => {
     if (page > 1) {
-      setSearchParams({ page: (page - 1).toString() });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set("page", (page - 1).toString());
+      setSearchParams(newParams);
     }
   };
 
   const handleNextPage = () => {
     if (hasMore) {
-      setSearchParams({ page: (page + 1).toString() });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set("page", (page + 1).toString());
+      setSearchParams(newParams);
     }
   };
 
@@ -110,13 +133,19 @@ export default function EntriesList() {
     try {
       await deleteEntry(entryId);
       // Reload entries after deletion
-      const response = await fetchEntries(page, pageSize);
+      const response = await searchEntries({
+        query: searchQuery || undefined,
+        page,
+        pageSize,
+      });
       setEntries(response.entries);
       setTotal(response.total);
       setHasMore(response.hasMore);
       // If current page is empty and not first page, go back one page
       if (response.entries.length === 0 && page > 1) {
-        setSearchParams({ page: (page - 1).toString() });
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set("page", (page - 1).toString());
+        setSearchParams(newParams);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete entry");
@@ -124,15 +153,83 @@ export default function EntriesList() {
     }
   };
 
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    const newParams = new URLSearchParams(searchParams);
+    if (value.trim()) {
+      newParams.set("q", value);
+    } else {
+      newParams.delete("q");
+    }
+    newParams.set("page", "1"); // Reset to first page on new search
+    setSearchParams(newParams);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("q");
+    newParams.set("page", "1");
+    setSearchParams(newParams);
+  };
+
   return (
     <div className="page-container">
       <div style={{ marginBottom: "20px" }}>
+        <div style={{ marginBottom: "10px" }}>
+          <input
+            type="text"
+            placeholder="Search ..."
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            style={{
+              padding: "8px",
+              width: "300px",
+              border: `1px solid var(--input-border)`,
+              borderRadius: "4px",
+              backgroundColor: "var(--input-background)",
+              color: "var(--text-color)"
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={handleClearSearch}
+              style={{
+                marginLeft: "10px",
+                padding: "8px 12px",
+                border: `1px solid var(--input-border)`,
+                borderRadius: "4px",
+                backgroundColor: "var(--button-background)",
+                color: "var(--text-color)",
+                cursor: "pointer"
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--button-hover-background)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--button-background)";
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
         <button onClick={() => setEditMode(!editMode)}>
           {editMode ? "Exit Edit Mode" : "Edit Mode"}
         </button>
       </div>
 
       {error && <div>Error: {error}</div>}
+
+      {searchQuery && !loading && (
+        <div style={{ marginBottom: "10px", fontSize: "14px", color: "var(--secondary-color)" }}>
+          {total === 0
+            ? `No entries found for "${searchQuery}"`
+            : `Found ${total} result${
+                total === 1 ? "" : "s"
+              } for "${searchQuery}"`}
+        </div>
+      )}
 
       {loading ? (
         <div>Loading entries...</div>
