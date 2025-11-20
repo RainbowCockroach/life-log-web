@@ -12,6 +12,7 @@ import {
 } from "../../services/api";
 import { processImages } from "../../utils/imageUtils";
 import { API_CONFIG } from "../../config/constants";
+import "./Editor.css";
 
 interface EditorProps {
   entryId?: number;
@@ -296,40 +297,16 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
   };
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div className="editor-container">
       <div>
         {/* Status messages */}
         {error && (
-          <div
-            style={{
-              padding: "8px",
-              marginBottom: "8px",
-              backgroundColor: "var(--error-background)",
-              border: "1px solid var(--error-border)",
-              borderRadius: "4px",
-              color: "var(--error-text)",
-            }}
-          >
+          <div className="error-message">
             Error: {error}
           </div>
         )}
         {successMessage && (
-          <div
-            style={{
-              padding: "8px",
-              marginBottom: "8px",
-              backgroundColor: "var(--success-background)",
-              border: "1px solid var(--success-border)",
-              borderRadius: "4px",
-              color: "var(--success-text)",
-            }}
-          >
+          <div className="success-message">
             {successMessage}
           </div>
         )}
@@ -357,17 +334,13 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
 
             {showDateTimeSection && (
               <div>
-                <label htmlFor="custom-datetime" style={{ color: "var(--text-color)" }}>Entry Date/Time: </label>
+                <label htmlFor="custom-datetime" className="datetime-label">Entry Date/Time: </label>
                 <input
                   id="custom-datetime"
                   type="datetime-local"
                   value={customDateTime}
                   onChange={(e) => setCustomDateTime(e.target.value)}
-                  style={{
-                    backgroundColor: "var(--input-background)",
-                    color: "var(--text-color)",
-                    border: "1px solid var(--border-color)"
-                  }}
+                  className="datetime-input"
                 />
                 {customDateTime && (
                   <button onClick={() => setCustomDateTime("")}>Clear</button>
@@ -389,7 +362,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
         />
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, marginTop: "16px" }}>
+      <div className="editor-main">
         <MarkdownEditor
           initialValue={content}
           onImageUpload={handleImageUpload}
