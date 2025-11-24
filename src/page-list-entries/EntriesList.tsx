@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { searchEntries, deleteEntry, type Entry } from "../../services/api";
-import MarkdownViewer from "../common/MarkdownViewer";
+import { searchEntries, deleteEntry, type Entry } from "../services/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import "../../themes/default.css";
+import "../themes/default.css";
+import MarkdownViewer from "../components/MarkdownViewer";
 
 export default function EntriesList() {
   const navigate = useNavigate();
@@ -188,7 +188,7 @@ export default function EntriesList() {
               border: `1px solid var(--input-border)`,
               borderRadius: "4px",
               backgroundColor: "var(--input-background)",
-              color: "var(--text-color)"
+              color: "var(--text-color)",
             }}
           />
           {searchQuery && (
@@ -201,13 +201,15 @@ export default function EntriesList() {
                 borderRadius: "4px",
                 backgroundColor: "var(--button-background)",
                 color: "var(--text-color)",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--button-hover-background)";
+                e.currentTarget.style.backgroundColor =
+                  "var(--button-hover-background)";
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--button-background)";
+                e.currentTarget.style.backgroundColor =
+                  "var(--button-background)";
               }}
             >
               Clear
@@ -222,7 +224,13 @@ export default function EntriesList() {
       {error && <div>Error: {error}</div>}
 
       {searchQuery && !loading && (
-        <div style={{ marginBottom: "10px", fontSize: "14px", color: "var(--secondary-color)" }}>
+        <div
+          style={{
+            marginBottom: "10px",
+            fontSize: "14px",
+            color: "var(--secondary-color)",
+          }}
+        >
           {total === 0
             ? `No entries found for "${searchQuery}"`
             : `Found ${total} result${

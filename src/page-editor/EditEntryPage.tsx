@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import Editor from "../components/editor/Editor";
+import Editor from "./Editor";
 
 function EditEntryPage() {
   const { id } = useParams<{ id: string }>();

@@ -1,12 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { NavBar } from "./components/common";
-import EditorPage from "./pages/EditorPage";
-import EntriesPage from "./pages/EntriesPage";
-import TagsPage from "./pages/TagsPage";
-import ApiKeyPage from "./pages/ApiKeyPage";
-import EditEntryPage from "./pages/EditEntryPage";
+import EditorPage from "./page-editor/EditorPage";
+import EntriesPage from "./page-list-entries/EntriesPage";
+import TagsPage from "./page-tags/TagsPage";
+import ApiKeyPage from "./page-api-key/ApiKeyPage";
+import EditEntryPage from "./page-editor/EditEntryPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./themes/default.css";
+import NavBar from "./components/NavBar";
 
 function App() {
   return (
@@ -18,7 +18,7 @@ function App() {
             flexDirection: "column",
             height: "100vh",
             backgroundColor: "var(--background-color)",
-            color: "var(--text-color)"
+            color: "var(--text-color)",
           }}
         >
           <NavBar />

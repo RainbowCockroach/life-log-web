@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import MarkdownEditor from "./MarkdownEditor";
-import TagAutocomplete from "./TagAutocomplete";
 import {
   saveContent,
   uploadImages,
@@ -9,10 +7,12 @@ import {
   fetchEntry,
   updateEntry,
   type Tag,
-} from "../../services/api";
-import { processImages } from "../../utils/imageUtils";
-import { API_CONFIG } from "../../config/constants";
+} from "../services/api";
+import { processImages } from "../utils/imageUtils";
+import { API_CONFIG } from "../config/constants";
 import "./Editor.css";
+import TagAutocomplete from "./TagAutocomplete";
+import MarkdownEditor from "./MarkdownEditor";
 
 interface EditorProps {
   entryId?: number;
@@ -300,15 +300,9 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
     <div className="editor-container">
       <div>
         {/* Status messages */}
-        {error && (
-          <div className="error-message">
-            Error: {error}
-          </div>
-        )}
+        {error && <div className="error-message">Error: {error}</div>}
         {successMessage && (
-          <div className="success-message">
-            {successMessage}
-          </div>
+          <div className="success-message">{successMessage}</div>
         )}
 
         {/* Tags field with toggle */}
@@ -334,7 +328,9 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
 
             {showDateTimeSection && (
               <div>
-                <label htmlFor="custom-datetime" className="datetime-label">Entry Date/Time: </label>
+                <label htmlFor="custom-datetime" className="datetime-label">
+                  Entry Date/Time:{" "}
+                </label>
                 <input
                   id="custom-datetime"
                   type="datetime-local"

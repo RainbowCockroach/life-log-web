@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { hasApiKey } from "../../utils/apiKeyStorage";
+import { hasApiKey } from "../utils/apiKeyStorage";
 import { ThemeToggle } from "./ThemeToggle";
 
 function NavBar() {

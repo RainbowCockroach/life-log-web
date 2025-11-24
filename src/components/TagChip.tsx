@@ -1,11 +1,11 @@
-import type { Tag as TagType } from "../../services/api";
+import type { Tag as TagType } from "../services/api";
 
 interface TagProps {
   tag: TagType | { id: number; name: string };
   onRemove?: (tagId: number) => void;
 }
 
-export default function Tag({ tag, onRemove }: TagProps) {
+export default function TagChip({ tag, onRemove }: TagProps) {
   const backgroundColor =
     "config" in tag && tag.config?.backgroundColor
       ? tag.config.backgroundColor
