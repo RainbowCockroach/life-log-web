@@ -24,6 +24,14 @@ export interface Entry {
   }>;
 }
 
+export interface TagFormData {
+  name: string;
+  searchHint: string;
+  type: string;
+  config: Record<string, unknown>;
+  parentId?: number | null;
+}
+
 export interface SaveContentRequest {
   id?: number;
   content: string;
@@ -247,8 +255,9 @@ export async function searchEntries(
   if (useSearchEndpoint) {
     apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}/search`;
     const searchParams = new URLSearchParams();
-    if (query) searchParams.append('q', query);
-    if (tagIds && tagIds.length > 0) searchParams.append('tagIds', tagIds.join(','));
+    if (query) searchParams.append("q", query);
+    if (tagIds && tagIds.length > 0)
+      searchParams.append("tagIds", tagIds.join(","));
     if (searchParams.toString()) {
       apiUrl += `?${searchParams.toString()}`;
     }
@@ -353,13 +362,10 @@ export async function searchTagSuggestions(
 
 export interface CreateTagRequest {
   name: string;
+  searchHint: string;
   type?: string;
-  config?: {
-    backgroundColor?: string;
-    textColor?: string;
-    [key: string]: any;
-  };
-  parentId?: number;
+  config?: Record<string, unknown>;
+  parentId?: number | null;
 }
 
 /**
@@ -526,6 +532,103 @@ export async function deleteEntry(id: number): Promise<{ message: string }> {
     return await response.json();
   } catch (error) {
     console.error("Delete entry error:", error);
+    throw error;
+  }
+}
+
+// Tag API functions
+
+/**
+ * Fetches all tags
+ * @returns Promise with array of tags
+ */
+export async function fetchTags(): Promise<Tag[]> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.TAGS}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Fetch tags error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates an existing tag
+ * @param id - Tag ID to update
+ * @param tag - Updated tag data
+ * @returns Promise with updated tag
+ */
+export async function updateTag(
+  id: number,
+  tag: Partial<CreateTagRequest>
+): Promise<Tag> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.TAGS}/${id}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": getStoredApiKey(),
+      },
+      body: JSON.stringify(tag),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Update tag error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a tag by ID
+ * @param id - Tag ID to delete
+ * @returns Promise with delete response
+ */
+export async function deleteTag(id: number): Promise<{ message: string }> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.TAGS}/${id}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "DELETE",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Delete tag error:", error);
     throw error;
   }
 }

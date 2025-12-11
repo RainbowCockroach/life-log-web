@@ -72,6 +72,7 @@ export default function TagAutocomplete({
       try {
         const newTag = await createTag({
           name: option.metadata.name,
+          searchHint: option.metadata.name,
           type: tagType,
           config: {
             backgroundColor: defaultColor,
