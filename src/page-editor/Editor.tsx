@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import MarkdownEditor from "./MarkdownEditor";
-import TagAutocomplete from "./TagAutocomplete";
 import {
   saveContent,
   uploadImages,
@@ -9,9 +7,12 @@ import {
   fetchEntry,
   updateEntry,
   type Tag,
-} from "../../services/api";
-import { processImages } from "../../utils/imageUtils";
-import { API_CONFIG } from "../../config/constants";
+} from "../services/api";
+import { processImages } from "../utils/imageUtils";
+import { API_CONFIG } from "../config/constants";
+import "./Editor.css";
+import TagAutocomplete from "./TagAutocomplete";
+import MarkdownEditor from "./MarkdownEditor";
 
 interface EditorProps {
   entryId?: number;
@@ -193,27 +194,6 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content, extractImageFilenames]);
 
-  // URL transform function for Markdown component
-  const urlTransform = useCallback(
-    (url: string): string => {
-      // If it's already a full URL, return as-is
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        return url;
-      }
-
-      // If it's an uploading placeholder, return a data URL for a loading indicator
-      if (url.startsWith("uploading-")) {
-        // Return a transparent 1x1 pixel (or you could use a loading spinner image)
-        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ctext x="10" y="50" font-size="12"%3EUploading...%3C/text%3E%3C/svg%3E';
-      }
-
-      // If it's a filename, look up the signed URL
-      const signedUrl = imageUrlMap.get(url);
-      return signedUrl || url;
-    },
-    [imageUrlMap]
-  );
-
   const handleSave = async (content: string) => {
     setIsSaving(true);
     setError(null);
@@ -296,42 +276,12 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
   };
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div className="editor-container">
       <div>
         {/* Status messages */}
-        {error && (
-          <div
-            style={{
-              padding: "8px",
-              marginBottom: "8px",
-              backgroundColor: "#fee",
-              border: "1px solid #fcc",
-              borderRadius: "4px",
-              color: "#c33",
-            }}
-          >
-            Error: {error}
-          </div>
-        )}
+        {error && <div className="error-message">Error: {error}</div>}
         {successMessage && (
-          <div
-            style={{
-              padding: "8px",
-              marginBottom: "8px",
-              backgroundColor: "#efe",
-              border: "1px solid #cfc",
-              borderRadius: "4px",
-              color: "#3c3",
-            }}
-          >
-            {successMessage}
-          </div>
+          <div className="success-message">{successMessage}</div>
         )}
 
         {/* Tags field with toggle */}
@@ -357,12 +307,15 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
 
             {showDateTimeSection && (
               <div>
-                <label htmlFor="custom-datetime">Entry Date/Time: </label>
+                <label htmlFor="custom-datetime" className="datetime-label">
+                  Entry Date/Time:{" "}
+                </label>
                 <input
                   id="custom-datetime"
                   type="datetime-local"
                   value={customDateTime}
                   onChange={(e) => setCustomDateTime(e.target.value)}
+                  className="datetime-input"
                 />
                 {customDateTime && (
                   <button onClick={() => setCustomDateTime("")}>Clear</button>
@@ -384,14 +337,13 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
         />
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, marginTop: "16px" }}>
+      <div className="editor-main">
         <MarkdownEditor
           initialValue={content}
           onImageUpload={handleImageUpload}
           onChange={handleContentChange}
           onSave={handleSave}
           isSaving={isSaving}
-          urlTransform={urlTransform}
         />
       </div>
     </div>

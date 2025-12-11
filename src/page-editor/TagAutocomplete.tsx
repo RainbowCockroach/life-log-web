@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
-import Autocomplete, { type AutocompleteOption } from "../common/Autocomplete";
-import { searchTagSuggestions, createTag, type Tag } from "../../services/api";
-import TagComponent from "../common/Tag";
+import { searchTagSuggestions, createTag, type Tag } from "../services/api";
+import type { AutocompleteOption } from "../components/Autocomplete";
+import Autocomplete from "../components/Autocomplete";
+import TagChip from "../components/TagChip";
 
 interface TagAutocompleteProps {
   selectedTags: Tag[];
@@ -150,7 +151,7 @@ export default function TagAutocomplete({
         {selectedTags.length > 0 && (
           <>
             {selectedTags.map((tag) => (
-              <TagComponent key={tag.id} tag={tag} onRemove={handleRemoveTag} />
+              <TagChip key={tag.id} tag={tag} onRemove={handleRemoveTag} />
             ))}
           </>
         )}

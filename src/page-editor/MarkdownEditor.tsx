@@ -1,5 +1,4 @@
 import { useState, useRef, type ChangeEvent, useEffect } from "react";
-import Markdown from "react-markdown";
 
 interface MarkdownEditorProps {
   initialValue?: string;
@@ -7,7 +6,6 @@ interface MarkdownEditorProps {
   onChange?: (value: string) => void;
   onSave?: (content: string) => void;
   isSaving?: boolean;
-  urlTransform?: (url: string) => string;
 }
 
 // Helper function to convert single newlines to markdown hard breaks
@@ -33,25 +31,14 @@ export default function MarkdownEditor({
   onChange,
   onSave,
   isSaving = false,
-  urlTransform = (url) => url,
 }: MarkdownEditorProps) {
   const [content, setContent] = useState(initialValue);
-  const [showPreview, setShowPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isInitialLoad = useRef(true);
   const lastInitialValue = useRef(initialValue);
 
   // Only update content when initialValue changes from external sources (like loading a saved entry)
   // Avoid updating during normal typing to prevent cursor jumping
   useEffect(() => {
-    // On initial mount, always set the content
-    if (isInitialLoad.current) {
-      setContent(initialValue);
-      lastInitialValue.current = initialValue;
-      isInitialLoad.current = false;
-      return;
-    }
-
     // Only update if the initialValue is significantly different from what we last saw
     // This prevents the cursor jumping issue during normal typing
     if (initialValue !== lastInitialValue.current) {
@@ -66,6 +53,7 @@ export default function MarkdownEditor({
         lastInitialValue.current = initialValue;
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialValue]);
 
   // Auto-focus textarea on mount
@@ -84,7 +72,6 @@ export default function MarkdownEditor({
     const markdownValue = convertToMarkdownLineBreaks(newValue);
     onChange?.(markdownValue);
   };
-
 
   const handleSave = () => {
     onSave?.(content);
@@ -206,8 +193,10 @@ export default function MarkdownEditor({
             padding: "12px",
             fontSize: "16px",
             lineHeight: "1.6",
-            border: "1px solid #ccc",
+            border: "1px solid var(--border-color)",
             borderRadius: "4px",
+            backgroundColor: "var(--input-background)",
+            color: "var(--text-color)",
           }}
           placeholder="Write your markdown here..."
         />
@@ -225,34 +214,8 @@ export default function MarkdownEditor({
           <button onClick={handleSave} disabled={isSaving}>
             {isSaving ? "Saving..." : "Save"}
           </button>
-          <button onClick={() => setShowPreview(!showPreview)}>
-            {showPreview ? "Hide Preview" : "Show Preview"}
-          </button>
         </div>
       </div>
-      {showPreview && (
-        <div
-          id="markdown-preview"
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-            padding: "12px",
-            minHeight: 0,
-          }}
-        >
-          <style>{`
-            #markdown-preview img {
-              max-width: 100%;
-              height: auto;
-              display: block;
-              margin: 8px 0;
-            }
-          `}</style>
-          <Markdown urlTransform={urlTransform}>{content}</Markdown>
-        </div>
-      )}
     </div>
   );
 }

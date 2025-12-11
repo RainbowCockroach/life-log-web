@@ -1,4 +1,4 @@
-import Editor from "../components/editor/Editor";
+import Editor from "./Editor";
 
 function EditorPage() {
   return <Editor />;

@@ -149,6 +149,7 @@ export default function Autocomplete({
             marginBottom: '4px',
             fontSize: '14px',
             fontWeight: '500',
+            color: 'var(--text-color)',
           }}
         >
           {label}
@@ -166,9 +167,11 @@ export default function Autocomplete({
           width: '100%',
           padding: '8px 12px',
           fontSize: '14px',
-          border: '1px solid #ccc',
+          border: '1px solid var(--border-color)',
           borderRadius: '4px',
           boxSizing: 'border-box',
+          backgroundColor: 'var(--input-background)',
+          color: 'var(--text-color)',
         }}
       />
       {isOpen && (
@@ -181,18 +184,18 @@ export default function Autocomplete({
             right: 0,
             maxHeight: '200px',
             overflowY: 'auto',
-            backgroundColor: 'white',
-            border: '1px solid #ccc',
+            backgroundColor: 'var(--paper-color)',
+            border: '1px solid var(--border-color)',
             borderTop: 'none',
             borderRadius: '0 0 4px 4px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            boxShadow: '0 2px 4px var(--shadow-color)',
             zIndex: 1000,
           }}
         >
           {isLoading ? (
-            <div style={{ padding: '8px 12px', color: '#666' }}>Loading...</div>
+            <div style={{ padding: '8px 12px', color: 'var(--secondary-color)' }}>Loading...</div>
           ) : suggestions.length === 0 ? (
-            <div style={{ padding: '8px 12px', color: '#666' }}>No suggestions</div>
+            <div style={{ padding: '8px 12px', color: 'var(--secondary-color)' }}>No suggestions</div>
           ) : (
             suggestions.map((option, index) => (
               <div
@@ -201,7 +204,8 @@ export default function Autocomplete({
                 style={{
                   padding: '8px 12px',
                   cursor: 'pointer',
-                  backgroundColor: index === selectedIndex ? '#f0f0f0' : 'white',
+                  backgroundColor: index === selectedIndex ? 'var(--button-hover-background)' : 'transparent',
+                  color: 'var(--text-color)',
                 }}
                 onMouseEnter={() => setSelectedIndex(index)}
               >

@@ -1,0 +1,44 @@
+.markdown-edit-textarea {
+  height: 100%;
+  width: 100%;
+}
+
+.editor-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.error-message {
+  padding: 8px;
+  margin-bottom: 8px;
+  background-color: var(--error-background);
+  border: 1px solid var(--error-border);
+  border-radius: 4px;
+  color: var(--error-text);
+}
+
+.success-message {
+  padding: 8px;
+  margin-bottom: 8px;
+  background-color: var(--success-background);
+  border: 1px solid var(--success-border);
+  border-radius: 4px;
+  color: var(--success-text);
+}
+
+.datetime-label {
+  color: var(--text-color);
+}
+
+.datetime-input {
+  background-color: var(--input-background);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.editor-main {
+  flex: 1;
+  min-height: 0;
+  margin-top: 16px;
+}
