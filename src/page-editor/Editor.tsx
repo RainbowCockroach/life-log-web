@@ -194,27 +194,6 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content, extractImageFilenames]);
 
-  // URL transform function for Markdown component
-  const urlTransform = useCallback(
-    (url: string): string => {
-      // If it's already a full URL, return as-is
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        return url;
-      }
-
-      // If it's an uploading placeholder, return a data URL for a loading indicator
-      if (url.startsWith("uploading-")) {
-        // Return a transparent 1x1 pixel (or you could use a loading spinner image)
-        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ctext x="10" y="50" font-size="12"%3EUploading...%3C/text%3E%3C/svg%3E';
-      }
-
-      // If it's a filename, look up the signed URL
-      const signedUrl = imageUrlMap.get(url);
-      return signedUrl || url;
-    },
-    [imageUrlMap]
-  );
-
   const handleSave = async (content: string) => {
     setIsSaving(true);
     setError(null);
@@ -365,7 +344,6 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
           onChange={handleContentChange}
           onSave={handleSave}
           isSaving={isSaving}
-          urlTransform={urlTransform}
         />
       </div>
     </div>
