@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { searchEntries, deleteEntry, type Entry } from "../services/api";
+import { useState, useEffect, useCallback } from "react";
+import { searchEntries, deleteEntry, fetchTags, type Entry, type Tag } from "../services/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "../themes/default.css";
 import MarkdownViewer from "../components/MarkdownViewer";
@@ -9,15 +9,20 @@ export default function EntriesList() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Get page and search query from URL params
-  const getPageFromParams = () => {
+  const getPageFromParams = useCallback(() => {
     const pageParam = searchParams.get("page");
     const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
     return isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
-  };
+  }, [searchParams]);
 
-  const getSearchQueryFromParams = () => {
+  const getSearchQueryFromParams = useCallback(() => {
     return searchParams.get("q") || "";
-  };
+  }, [searchParams]);
+
+  const getTagIdsFromParams = useCallback(() => {
+    const tagIdsParam = searchParams.get("tagIds");
+    return tagIdsParam ? tagIdsParam.split(",").map(id => parseInt(id, 10)) : [];
+  }, [searchParams]);
 
   const page = getPageFromParams();
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -27,7 +32,24 @@ export default function EntriesList() {
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState(getSearchQueryFromParams());
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>(getTagIdsFromParams());
+  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [showTagFilter, setShowTagFilter] = useState(false);
   const pageSize = 10;
+
+  // Load all tags
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const tags = await fetchTags();
+        setAllTags(tags.filter(tag => tag.type === "tag"));
+      } catch (err) {
+        console.error("Error loading tags:", err);
+      }
+    };
+
+    loadTags();
+  }, []);
 
   useEffect(() => {
     const loadEntries = async () => {
@@ -37,6 +59,7 @@ export default function EntriesList() {
       try {
         const response = await searchEntries({
           query: searchQuery || undefined,
+          tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
           page,
           pageSize,
         });
@@ -52,7 +75,7 @@ export default function EntriesList() {
     };
 
     loadEntries();
-  }, [page, searchQuery]);
+  }, [page, searchQuery, selectedTagIds]);
 
   // Sync search query state with URL parameters
   useEffect(() => {
@@ -60,7 +83,17 @@ export default function EntriesList() {
     if (queryFromUrl !== searchQuery) {
       setSearchQuery(queryFromUrl);
     }
-  }, [searchParams, searchQuery]);
+  }, [searchParams, searchQuery, getSearchQueryFromParams]);
+
+  // Sync tag IDs state with URL parameters
+  useEffect(() => {
+    const tagIdsFromUrl = getTagIdsFromParams();
+    const currentTagIds = selectedTagIds.join(",");
+    const urlTagIds = tagIdsFromUrl.join(",");
+    if (urlTagIds !== currentTagIds) {
+      setSelectedTagIds(tagIdsFromUrl);
+    }
+  }, [searchParams, selectedTagIds, getTagIdsFromParams]);
 
   // Validate page number and redirect if invalid
   useEffect(() => {
@@ -135,6 +168,7 @@ export default function EntriesList() {
       // Reload entries after deletion
       const response = await searchEntries({
         query: searchQuery || undefined,
+        tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
         page,
         pageSize,
       });
@@ -173,6 +207,30 @@ export default function EntriesList() {
     setSearchParams(newParams);
   };
 
+  const handleToggleTag = (tagId: number) => {
+    const newSelectedTagIds = selectedTagIds.includes(tagId)
+      ? selectedTagIds.filter(id => id !== tagId)
+      : [...selectedTagIds, tagId];
+
+    setSelectedTagIds(newSelectedTagIds);
+    const newParams = new URLSearchParams(searchParams);
+    if (newSelectedTagIds.length > 0) {
+      newParams.set("tagIds", newSelectedTagIds.join(","));
+    } else {
+      newParams.delete("tagIds");
+    }
+    newParams.set("page", "1"); // Reset to first page when filter changes
+    setSearchParams(newParams);
+  };
+
+  const handleClearTagFilter = () => {
+    setSelectedTagIds([]);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("tagIds");
+    newParams.set("page", "1");
+    setSearchParams(newParams);
+  };
+
   return (
     <div className="page-container">
       <div style={{ marginBottom: "20px" }}>
@@ -182,40 +240,48 @@ export default function EntriesList() {
             placeholder="Search ..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            style={{
-              padding: "8px",
-              width: "300px",
-              border: `1px solid var(--input-border)`,
-              borderRadius: "4px",
-              backgroundColor: "var(--input-background)",
-              color: "var(--text-color)",
-            }}
           />
           {searchQuery && (
-            <button
-              onClick={handleClearSearch}
-              style={{
-                marginLeft: "10px",
-                padding: "8px 12px",
-                border: `1px solid var(--input-border)`,
-                borderRadius: "4px",
-                backgroundColor: "var(--button-background)",
-                color: "var(--text-color)",
-                cursor: "pointer",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "var(--button-hover-background)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "var(--button-background)";
-              }}
-            >
+            <button onClick={handleClearSearch} style={{ marginLeft: "10px" }}>
               Clear
             </button>
           )}
         </div>
+        {allTags.length > 0 && (
+          <div style={{ marginBottom: "10px" }}>
+            <button onClick={() => setShowTagFilter(!showTagFilter)}>
+              {showTagFilter ? "Hide" : "Show"} tag filter
+              {selectedTagIds.length > 0 && ` (${selectedTagIds.length})`}
+            </button>
+            {showTagFilter && (
+              <div style={{ marginTop: "10px" }}>
+                {selectedTagIds.length > 0 && (
+                  <button onClick={handleClearTagFilter} style={{ marginBottom: "10px" }}>
+                    Clear all
+                  </button>
+                )}
+                <div>
+                  {allTags.map((tag) => {
+                    const isSelected = selectedTagIds.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        onClick={() => handleToggleTag(tag.id)}
+                        style={{
+                          marginRight: "5px",
+                          marginBottom: "5px",
+                          fontWeight: isSelected ? "bold" : "normal",
+                        }}
+                      >
+                        {isSelected ? "✓ " : ""}{tag.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <button onClick={() => setEditMode(!editMode)}>
           {editMode ? "Exit Edit Mode" : "Edit Mode"}
         </button>
@@ -223,7 +289,7 @@ export default function EntriesList() {
 
       {error && <div>Error: {error}</div>}
 
-      {searchQuery && !loading && (
+      {(searchQuery || selectedTagIds.length > 0) && !loading && (
         <div
           style={{
             marginBottom: "10px",
@@ -232,10 +298,8 @@ export default function EntriesList() {
           }}
         >
           {total === 0
-            ? `No entries found for "${searchQuery}"`
-            : `Found ${total} result${
-                total === 1 ? "" : "s"
-              } for "${searchQuery}"`}
+            ? `No entries found${searchQuery ? ` for "${searchQuery}"` : ""}${selectedTagIds.length > 0 ? " with selected tags" : ""}`
+            : `Found ${total} result${total === 1 ? "" : "s"}${searchQuery ? ` for "${searchQuery}"` : ""}${selectedTagIds.length > 0 ? ` with ${selectedTagIds.length} tag${selectedTagIds.length === 1 ? "" : "s"}` : ""}`}
         </div>
       )}
 
