@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { getSignedUrls, type SignedUrlResponse } from "../services/api";
 import { API_CONFIG } from "../config/constants";
+import LinkCard from "./LinkCard";
 
 interface MarkdownViewerProps {
   content: string;
@@ -101,7 +102,29 @@ export default function MarkdownViewer({
 
   return (
     <div>
-      <Markdown urlTransform={urlTransform}>{content}</Markdown>
+      <Markdown
+        urlTransform={urlTransform}
+        components={{
+          a: ({ href, children, ...props }) => {
+            // Check if this is a link card (marked with 🔗 emoji)
+            const isLinkCard =
+              children && children.toString().includes("🔗");
+
+            if (isLinkCard && href) {
+              return <LinkCard url={href} />;
+            }
+
+            // Regular link
+            return (
+              <a href={href} {...props}>
+                {children}
+              </a>
+            );
+          },
+        }}
+      >
+        {content}
+      </Markdown>
     </div>
   );
 }
