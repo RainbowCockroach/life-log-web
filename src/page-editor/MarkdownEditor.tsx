@@ -77,6 +77,39 @@ export default function MarkdownEditor({
     onSave?.(content);
   };
 
+  const handleAddLink = () => {
+    const url = prompt("Enter URL:");
+    if (!url) return;
+
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Capture cursor position
+    const insertPosition = textarea.selectionStart;
+
+    // Create link card markdown with 🔗 emoji
+    const linkCardMarkdown = `[🔗](${url})`;
+
+    // Insert link card at cursor position
+    const updatedContent =
+      content.substring(0, insertPosition) +
+      "\n" +
+      linkCardMarkdown +
+      "\n" +
+      content.substring(insertPosition);
+
+    setContent(updatedContent);
+    const markdownValue = convertToMarkdownLineBreaks(updatedContent);
+    onChange?.(markdownValue);
+
+    // Move cursor to after the link
+    const newCursorPosition = insertPosition + linkCardMarkdown.length + 2;
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+    }, 0);
+  };
+
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -211,6 +244,7 @@ export default function MarkdownEditor({
               style={{ display: "none" }}
             />
           </label>
+          <button onClick={handleAddLink}>Add Link</button>
           <button onClick={handleSave} disabled={isSaving}>
             {isSaving ? "Saving..." : "Save"}
           </button>
