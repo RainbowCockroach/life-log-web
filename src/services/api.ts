@@ -40,6 +40,7 @@ export interface SaveContentRequest {
   locationId?: number;
   tagIds?: number[];
   isHighlighted?: boolean;
+  createdAt?: string;
 }
 
 export interface SaveContentResponse {

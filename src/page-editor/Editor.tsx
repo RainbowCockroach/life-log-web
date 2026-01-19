@@ -234,10 +234,13 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
         }
       } else {
         // Create new entry
-        // Convert custom datetime to timestamp if provided
+        // Convert custom datetime to timestamp and ISO format if provided
         let customId: number | undefined;
+        let createdAtISO: string | undefined;
         if (customDateTime) {
-          customId = new Date(customDateTime).getTime();
+          const dateObj = new Date(customDateTime);
+          customId = dateObj.getTime();
+          createdAtISO = dateObj.toISOString();
         }
 
         const response = await saveContent({
@@ -251,6 +254,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
               : undefined,
           mediaPaths:
             uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
+          createdAt: createdAtISO,
         });
 
         if (response.success) {
