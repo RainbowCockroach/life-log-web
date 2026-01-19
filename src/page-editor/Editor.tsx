@@ -207,12 +207,20 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
     }
 
     try {
-      // Generate search hint from content (remove markdown syntax for better search)
-      const searchHint = content
+      // Generate search hint with both diacritics and stripped versions
+      // Example: "hôm nay" -> "hôm nay hom nay"
+      const cleanContent = content
         .replace(/[#*_~`[\]()]/g, " ")
         .replace(/\s+/g, " ")
-        .trim()
+        .trim();
+
+      const withDiacritics = cleanContent.toLocaleLowerCase("vi");
+      const withoutDiacritics = cleanContent
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
+
+      const searchHint = `${withDiacritics} ${withoutDiacritics}`.trim();
 
       if (entryId) {
         // Update existing entry
