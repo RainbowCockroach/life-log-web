@@ -4,6 +4,7 @@ import EntriesPage from "./page-list-entries/EntriesPage";
 import TagsPage from "./page-tags/TagsPage";
 import ApiKeyPage from "./page-api-key/ApiKeyPage";
 import EditEntryPage from "./page-editor/EditEntryPage";
+import ExportPage from "./page-export/ExportPage";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./themes/default.css";
 import NavBar from "./components/NavBar";
@@ -28,6 +29,7 @@ function App() {
               <Route path="/entries" element={<EntriesPage />} />
               <Route path="/edit/:id" element={<EditEntryPage />} />
               <Route path="/tags" element={<TagsPage />} />
+              <Route path="/export" element={<ExportPage />} />
               <Route path="/api-key" element={<ApiKeyPage />} />
             </Routes>
           </div>

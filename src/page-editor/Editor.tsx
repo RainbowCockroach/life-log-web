@@ -207,12 +207,20 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
     }
 
     try {
-      // Generate search hint from content (remove markdown syntax for better search)
-      const searchHint = content
+      // Generate search hint with both diacritics and stripped versions
+      // Example: "hôm nay" -> "hôm nay hom nay"
+      const cleanContent = content
         .replace(/[#*_~`[\]()]/g, " ")
         .replace(/\s+/g, " ")
-        .trim()
+        .trim();
+
+      const withDiacritics = cleanContent.toLocaleLowerCase("vi");
+      const withoutDiacritics = cleanContent
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
+
+      const searchHint = `${withDiacritics} ${withoutDiacritics}`.trim();
 
       if (entryId) {
         // Update existing entry
@@ -234,10 +242,13 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
         }
       } else {
         // Create new entry
-        // Convert custom datetime to timestamp if provided
+        // Convert custom datetime to timestamp and ISO format if provided
         let customId: number | undefined;
+        let createdAtISO: string | undefined;
         if (customDateTime) {
-          customId = new Date(customDateTime).getTime();
+          const dateObj = new Date(customDateTime);
+          customId = dateObj.getTime();
+          createdAtISO = dateObj.toISOString();
         }
 
         const response = await saveContent({
@@ -251,6 +262,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
               : undefined,
           mediaPaths:
             uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
+          createdAt: createdAtISO,
         });
 
         if (response.success) {
