@@ -16,6 +16,9 @@ function NavBar() {
       <Link to="/tags">
         <button>Tags</button>
       </Link>
+      <Link to="/export">
+        <button>Export</button>
+      </Link>
       <Link to="/api-key">
         <button
           style={{

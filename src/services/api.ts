@@ -633,3 +633,34 @@ export async function deleteTag(id: number): Promise<{ message: string }> {
     throw error;
   }
 }
+
+/**
+ * Exports entries in a date range to PDF
+ * @param startDate - Start date in YYYY-MM-DD format
+ * @param endDate - End date in YYYY-MM-DD format
+ * @returns Promise with the ZIP file as a Blob
+ */
+export async function exportPdf(
+  startDate: string,
+  endDate: string
+): Promise<Blob> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}/export-pdf`;
+
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": getStoredApiKey(),
+    },
+    body: JSON.stringify({ startDate, endDate }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.error || `HTTP error! status: ${response.status}`
+    );
+  }
+
+  return response.blob();
+}
