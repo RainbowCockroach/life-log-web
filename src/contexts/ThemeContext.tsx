@@ -2,12 +2,15 @@ import React, { createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import { useTheme } from "../hooks/useTheme";
 import type { Theme, ResolvedTheme } from "../hooks/useTheme";
+import type { ThemeConfig } from "../services/api";
 
 interface ThemeContextType {
   theme: Theme;
   resolvedTheme: ResolvedTheme;
+  customTheme: ThemeConfig | null;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
+  reloadCustomTheme: () => void;
   isAuto: boolean;
   isDark: boolean;
 }

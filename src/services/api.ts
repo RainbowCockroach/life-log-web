@@ -664,3 +664,312 @@ export async function exportPdf(
 
   return response.blob();
 }
+
+// Theme types
+export interface ThemeColors {
+  text: string;
+  secondary: string;
+  tertiary: string;
+  background: string;
+  paper: string;
+  border: string;
+  accent: string;
+  error: string;
+  success: string;
+}
+
+export interface ThemeTypography {
+  fontFamily: string;
+  fontSize: string;
+  lineHeight: number;
+  headingFont: string;
+}
+
+export interface ThemeExport {
+  pageSize: "A4" | "A5" | "Letter";
+  fontFamily: string;
+  fontSize: string;
+  lineHeight: number;
+  margins: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+  showTags: boolean;
+  showLocation: boolean;
+}
+
+export interface ThemeFormatting {
+  dateFormat: string;
+  timeFormat: string;
+  locale: string;
+}
+
+export interface ThemeConfig {
+  colors: ThemeColors;
+  darkColors: ThemeColors;
+  typography: ThemeTypography;
+  formatting: ThemeFormatting;
+  export: ThemeExport;
+}
+
+export interface Theme {
+  id: number;
+  name: string;
+  config: ThemeConfig;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Fetches all themes
+ * @returns Promise with array of themes
+ */
+export async function fetchThemes(): Promise<Theme[]> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.THEMES}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Fetch themes error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches the active (default) theme
+ * @returns Promise with the active theme
+ */
+export async function fetchActiveTheme(): Promise<Theme> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.THEMES}/active`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Fetch active theme error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches a single theme by ID
+ * @param id - Theme ID to fetch
+ * @returns Promise with the theme
+ */
+export async function fetchTheme(id: number): Promise<Theme> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.THEMES}/${id}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Fetch theme error:", error);
+    throw error;
+  }
+}
+
+export interface CreateThemeRequest {
+  name: string;
+  config: ThemeConfig;
+  isDefault?: boolean;
+}
+
+/**
+ * Creates a new theme
+ * @param theme - Theme data to create
+ * @returns Promise with created theme
+ */
+export async function createTheme(theme: CreateThemeRequest): Promise<Theme> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.THEMES}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": getStoredApiKey(),
+      },
+      body: JSON.stringify(theme),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Create theme error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Updates an existing theme
+ * @param id - Theme ID to update
+ * @param theme - Updated theme data
+ * @returns Promise with updated theme
+ */
+export async function updateTheme(
+  id: number,
+  theme: Partial<CreateThemeRequest>
+): Promise<Theme> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.THEMES}/${id}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": getStoredApiKey(),
+      },
+      body: JSON.stringify(theme),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Update theme error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a theme by ID
+ * @param id - Theme ID to delete
+ * @returns Promise with delete response
+ */
+export async function deleteTheme(id: number): Promise<{ message: string }> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.THEMES}/${id}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "DELETE",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Delete theme error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Sets a theme as the default
+ * @param id - Theme ID to set as default
+ * @returns Promise with updated theme
+ */
+export async function setDefaultTheme(id: number): Promise<Theme> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.THEMES}/${id}/set-default`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Set default theme error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches the default theme configuration template
+ * @returns Promise with default theme config
+ */
+export async function fetchDefaultThemeConfig(): Promise<ThemeConfig> {
+  const apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.THEMES}/defaults/config`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "x-api-key": getStoredApiKey(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Fetch default theme config error:", error);
+    throw error;
+  }
+}

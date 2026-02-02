@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { fetchActiveTheme, type ThemeConfig, type ThemeColors } from "../services/api";
 
 export type Theme = "light" | "dark" | "auto";
 export type ResolvedTheme = "light" | "dark";
@@ -6,6 +7,7 @@ export type ResolvedTheme = "light" | "dark";
 interface ThemeState {
   theme: Theme;
   resolvedTheme: ResolvedTheme;
+  customTheme: ThemeConfig | null;
 }
 
 const STORAGE_KEY = "life-log-theme";
@@ -65,6 +67,36 @@ const resolveTheme = (theme: Theme): ResolvedTheme => {
 };
 
 /**
+ * Applies theme colors as CSS variables
+ */
+const applyThemeColors = (colors: ThemeColors, typography?: ThemeConfig["typography"]) => {
+  if (typeof document === "undefined") return;
+
+  const root = document.documentElement;
+
+  // Apply colors
+  root.style.setProperty("--text-color", colors.text);
+  root.style.setProperty("--secondary-color", colors.secondary);
+  root.style.setProperty("--thirdary-color", colors.tertiary);
+  root.style.setProperty("--paper-color", colors.paper);
+  root.style.setProperty("--background-color", colors.background);
+  root.style.setProperty("--border-color", colors.border);
+  root.style.setProperty("--accent-color", colors.accent);
+  root.style.setProperty("--error-text", colors.error);
+  root.style.setProperty("--success-text", colors.success);
+
+  // Apply typography if provided
+  if (typography) {
+    root.style.setProperty("--font-family", typography.fontFamily);
+    root.style.setProperty("--font-size", typography.fontSize);
+    root.style.setProperty("--line-height", String(typography.lineHeight));
+    document.body.style.fontFamily = typography.fontFamily;
+    document.body.style.fontSize = typography.fontSize;
+    document.body.style.lineHeight = String(typography.lineHeight);
+  }
+};
+
+/**
  * Custom hook for theme management with time-based auto-switching
  */
 export const useTheme = () => {
@@ -80,23 +112,26 @@ export const useTheme = () => {
     return {
       theme: storedTheme,
       resolvedTheme,
+      customTheme: null,
     };
   });
 
   /**
    * Updates the DOM to reflect the current theme
    */
-  const updateDOM = useCallback((resolvedTheme: ResolvedTheme) => {
+  const updateDOM = useCallback((resolvedTheme: ResolvedTheme, customTheme?: ThemeConfig | null) => {
     if (typeof document !== "undefined") {
       document.documentElement.setAttribute("data-theme", resolvedTheme);
 
+      // Apply custom theme colors if available
+      if (customTheme) {
+        const colors = resolvedTheme === "dark" ? customTheme.darkColors : customTheme.colors;
+        applyThemeColors(colors, customTheme.typography);
+      }
+
       // Also update body background for immediate visual feedback
-      document.body.style.backgroundColor =
-        resolvedTheme === "dark"
-          ? "var(--background-color)"
-          : "var(--background-color)";
-      document.body.style.color =
-        resolvedTheme === "dark" ? "var(--text-color)" : "var(--text-color)";
+      document.body.style.backgroundColor = "var(--background-color)";
+      document.body.style.color = "var(--text-color)";
     }
   }, []);
 
@@ -107,21 +142,49 @@ export const useTheme = () => {
     (newTheme: Theme) => {
       const resolvedTheme = resolveTheme(newTheme);
 
-      setThemeState({
+      setThemeState((prev) => ({
+        ...prev,
         theme: newTheme,
         resolvedTheme,
-      });
+      }));
 
       // Persist to localStorage
       if (typeof window !== "undefined") {
         localStorage.setItem(STORAGE_KEY, newTheme);
       }
 
-      // Update DOM
-      updateDOM(resolvedTheme);
+      // Update DOM with custom theme if available
+      setThemeState((prev) => {
+        updateDOM(resolvedTheme, prev.customTheme);
+        return prev;
+      });
     },
     [updateDOM]
   );
+
+  /**
+   * Loads the custom theme from the API
+   */
+  const loadCustomTheme = useCallback(async () => {
+    try {
+      const activeTheme = await fetchActiveTheme();
+      setThemeState((prev) => {
+        const newState = { ...prev, customTheme: activeTheme.config };
+        updateDOM(prev.resolvedTheme, activeTheme.config);
+        return newState;
+      });
+    } catch (error) {
+      console.error("Failed to load custom theme:", error);
+      // Continue with default CSS variables
+    }
+  }, [updateDOM]);
+
+  /**
+   * Reloads the custom theme (call after theme changes)
+   */
+  const reloadCustomTheme = useCallback(() => {
+    loadCustomTheme();
+  }, [loadCustomTheme]);
 
   /**
    * Toggles between light and dark themes (sets to manual mode)
@@ -175,14 +238,21 @@ export const useTheme = () => {
 
   // Effect to apply theme on mount and when resolvedTheme changes
   useEffect(() => {
-    updateDOM(themeState.resolvedTheme);
-  }, [themeState.resolvedTheme, updateDOM]);
+    updateDOM(themeState.resolvedTheme, themeState.customTheme);
+  }, [themeState.resolvedTheme, themeState.customTheme, updateDOM]);
+
+  // Effect to load custom theme on mount
+  useEffect(() => {
+    loadCustomTheme();
+  }, [loadCustomTheme]);
 
   return {
     theme: themeState.theme,
     resolvedTheme: themeState.resolvedTheme,
+    customTheme: themeState.customTheme,
     setTheme,
     toggleTheme,
+    reloadCustomTheme,
     isAuto: themeState.theme === "auto",
     isDark: themeState.resolvedTheme === "dark",
   };
