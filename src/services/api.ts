@@ -253,18 +253,20 @@ export async function searchEntries(
   const useSearchEndpoint = query || (tagIds && tagIds.length > 0);
   let apiUrl: string;
 
+  const searchParams = new URLSearchParams();
+  searchParams.append("page", page.toString());
+  searchParams.append("pageSize", pageSize.toString());
+
   if (useSearchEndpoint) {
     apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}/search`;
-    const searchParams = new URLSearchParams();
     if (query) searchParams.append("q", query);
     if (tagIds && tagIds.length > 0)
       searchParams.append("tagIds", tagIds.join(","));
-    if (searchParams.toString()) {
-      apiUrl += `?${searchParams.toString()}`;
-    }
   } else {
     apiUrl = `${API_CONFIG.API_BASE_URL}${API_CONFIG.ENDPOINTS.ENTRIES}`;
   }
+
+  apiUrl += `?${searchParams.toString()}`;
 
   try {
     const response = await fetch(apiUrl, {
@@ -281,22 +283,7 @@ export async function searchEntries(
       );
     }
 
-    const allEntries: Entry[] = await response.json();
-
-    // Implement client-side pagination
-    const total = allEntries.length;
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const entries = allEntries.slice(startIndex, endIndex);
-    const hasMore = endIndex < total;
-
-    return {
-      entries,
-      total,
-      page,
-      pageSize,
-      hasMore,
-    };
+    return await response.json() as FetchEntriesResponse;
   } catch (error) {
     console.error("Search entries error:", error);
     throw error;
