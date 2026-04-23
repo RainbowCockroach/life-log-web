@@ -14,6 +14,7 @@ export const API_CONFIG = {
     MEDIA_DOWNLOAD: "/media/download",
     TAGS: "/tags",
     SUMMARIES: "/summaries",
+    THEMES: "/themes",
   },
 } as const;
 
@@ -22,5 +23,12 @@ export const API_CONFIG = {
  */
 export const MEDIA_CONFIG = {
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-  ACCEPTED_IMAGE_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"],
+  ACCEPTED_IMAGE_TYPES: [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/heic",
+    "image/heif",
+  ],
 } as const;

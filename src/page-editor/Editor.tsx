@@ -28,7 +28,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
   const [locationTag, setLocationTag] = useState<Tag | null>(null);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [imageUrlMap, setImageUrlMap] = useState<Map<string, string>>(
-    new Map()
+    new Map(),
   );
   const [showTagsSection, setShowTagsSection] = useState(false);
   const [showDateTimeSection, setShowDateTimeSection] = useState(false);
@@ -50,7 +50,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
               searchHint: "",
               type: "tag",
               config: {},
-            }))
+            })),
           );
           setUploadedImagePaths(entry.mediaPaths || []);
         } catch (error) {
@@ -85,7 +85,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
         console.log(
           `  ${i + 1}. ${img.originalName} → ${img.newName} (${(
             img.size / 1024
-          ).toFixed(2)} KB)`
+          ).toFixed(2)} KB)`,
         );
       });
 
@@ -104,7 +104,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
       uploadResults.forEach((result) => {
         newMap.set(
           result.filename || result.path,
-          `${API_CONFIG.API_BASE_URL}${result.url}`
+          `${API_CONFIG.API_BASE_URL}${result.url}`,
         );
       });
       setImageUrlMap(newMap);
@@ -181,7 +181,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
         signedUrls.forEach((result) => {
           newMap.set(
             result.filename,
-            `${API_CONFIG.API_BASE_URL}${result.url}`
+            `${API_CONFIG.API_BASE_URL}${result.url}`,
           );
         });
         setImageUrlMap(newMap);
@@ -210,6 +210,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
       // Generate search hint with both diacritics and stripped versions
       // Example: "hôm nay" -> "hôm nay hom nay"
       const cleanContent = content
+        .replace(/!\[.*?\]\(.*?\)/g, " ") // image
         .replace(/[#*_~`[\]()]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
@@ -279,7 +280,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "An error occurred while saving"
+        err instanceof Error ? err.message : "An error occurred while saving",
       );
       console.error("Save error:", err);
     } finally {

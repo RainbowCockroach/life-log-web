@@ -4,6 +4,7 @@ import { saveApiKey, getApiKey } from "../utils/apiKeyStorage";
 function ApiKeyPage() {
   const [apiKey, setApiKey] = useState(getApiKey() || "");
   const [message, setMessage] = useState<string | null>(null);
+  const [showKey, setShowKey] = useState(false);
 
   const handleSave = () => {
     if (apiKey.trim()) {
@@ -28,13 +29,23 @@ function ApiKeyPage() {
 
       <div>
         <label>API Key</label>
-        <input
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Enter your API key"
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <input
+            type={showKey ? "text" : "password"}
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter your API key"
+          />
+          <button
+            type="button"
+            onClick={() => setShowKey((v) => !v)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "0 4px", fontSize: "1rem" }}
+            aria-label={showKey ? "Hide API key" : "Show API key"}
+          >
+            {showKey ? "🙈" : "👁️"}
+          </button>
+        </div>
       </div>
 
       <button onClick={handleSave}>Save API Key</button>
