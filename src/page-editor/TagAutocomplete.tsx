@@ -107,59 +107,30 @@ export default function TagAutocomplete({
   };
 
   return (
-    <div style={{ marginBottom: "12px" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          flexWrap: "wrap",
-        }}
-      >
-        <label
-          style={{
-            fontSize: "14px",
-            fontWeight: "500",
-            minWidth: "fit-content",
-          }}
-        >
-          {label}
-        </label>
+    <div className="editor-field">
+      <label className="editor-field__label">{label}</label>
 
-        {/* Tag input with autocomplete - disabled if singleSelect and already has selection */}
-        {!(singleSelect && selectedTags.length > 0) && (
-          <div style={{ flex: 1, minWidth: "200px" }}>
-            <Autocomplete
-              value={inputValue}
-              onChange={setInputValue}
-              onSelect={handleTagSelect}
-              fetchSuggestions={fetchTagSuggestions}
-              placeholder={isCreating ? "Creating..." : placeholder}
-              minChars={1}
-              debounceMs={200}
-            />
-            {isCreating && (
-              <div
-                style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}
-              >
-                Creating new tag...
-              </div>
-            )}
-          </div>
-        )}
+      {!(singleSelect && selectedTags.length > 0) && (
+        <div style={{ flex: 1, minWidth: "180px" }}>
+          <Autocomplete
+            value={inputValue}
+            onChange={setInputValue}
+            onSelect={handleTagSelect}
+            fetchSuggestions={fetchTagSuggestions}
+            placeholder={isCreating ? "Creating..." : placeholder}
+            minChars={1}
+            debounceMs={200}
+          />
+        </div>
+      )}
 
-        {/* Selected tags display - inline */}
-        {selectedTags.length > 0 && (
-          <>
-            {selectedTags.map((tag) => (
-              <TagChip key={tag.id} tag={tag} onRemove={handleRemoveTag} />
-            ))}
-          </>
-        )}
-      </div>
+      {selectedTags.length > 0 &&
+        selectedTags.map((tag) => (
+          <TagChip key={tag.id} tag={tag} onRemove={handleRemoveTag} />
+        ))}
 
       {singleSelect && selectedTags.length > 0 && (
-        <div style={{ fontSize: "12px", color: "#666", marginTop: "4px" }}>
+        <div className="editor-field__hint">
           Remove current selection to choose a different {label.toLowerCase()}
         </div>
       )}

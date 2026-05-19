@@ -1,4 +1,5 @@
 import { useState, useRef, type ChangeEvent, useEffect } from "react";
+import { ImagePlus, Link2, Save, Loader2 } from "lucide-react";
 
 interface MarkdownEditorProps {
   initialValue?: string;
@@ -8,20 +9,14 @@ interface MarkdownEditorProps {
   isSaving?: boolean;
 }
 
-// Helper function to convert single newlines to markdown hard breaks
-const convertToMarkdownLineBreaks = (text: string): string => {
-  // Split by double newlines to preserve paragraph breaks
-  const paragraphs = text.split("\n\n");
+const ICON_SIZE = 16;
 
-  // For each paragraph, add two spaces before single newlines
+const convertToMarkdownLineBreaks = (text: string): string => {
+  const paragraphs = text.split("\n\n");
   const processedParagraphs = paragraphs.map((paragraph) => {
-    // Split by single newlines
     const lines = paragraph.split("\n");
-    // Join with two spaces + newline (markdown hard break)
     return lines.join("  \n");
   });
-
-  // Rejoin paragraphs with double newlines
   return processedParagraphs.join("\n\n");
 };
 
@@ -34,20 +29,12 @@ export default function MarkdownEditor({
 }: MarkdownEditorProps) {
   const [content, setContent] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const lastInitialValue = useRef(initialValue);
 
-  // Only update content when initialValue changes from external sources (like loading a saved entry)
-  // Avoid updating during normal typing to prevent cursor jumping
   useEffect(() => {
-    // Only update if the initialValue is significantly different from what we last saw
-    // This prevents the cursor jumping issue during normal typing
     if (initialValue !== lastInitialValue.current) {
-      // Check if this is a real external change (like loading a different entry)
-      // vs. just the processed version of what the user typed
       const currentProcessed = convertToMarkdownLineBreaks(content);
-
-      // If the new initialValue is very different from our current content,
-      // it's likely an external change (like loading a saved entry)
       if (initialValue !== currentProcessed && initialValue !== content) {
         setContent(initialValue);
         lastInitialValue.current = initialValue;
@@ -56,7 +43,6 @@ export default function MarkdownEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialValue]);
 
-  // Auto-focus textarea on mount
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
@@ -66,9 +52,6 @@ export default function MarkdownEditor({
   const handleContentChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setContent(newValue);
-
-    // Convert single line breaks to markdown hard breaks (two spaces + newline)
-    // This ensures that when user presses Enter, it creates a new line in the rendered markdown
     const markdownValue = convertToMarkdownLineBreaks(newValue);
     onChange?.(markdownValue);
   };
@@ -84,13 +67,9 @@ export default function MarkdownEditor({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // Capture cursor position
     const insertPosition = textarea.selectionStart;
-
-    // Create link card markdown with 🔗 emoji
     const linkCardMarkdown = `[🔗](${url})`;
 
-    // Insert link card at cursor position
     const updatedContent =
       content.substring(0, insertPosition) +
       "\n" +
@@ -102,7 +81,6 @@ export default function MarkdownEditor({
     const markdownValue = convertToMarkdownLineBreaks(updatedContent);
     onChange?.(markdownValue);
 
-    // Move cursor to after the link
     const newCursorPosition = insertPosition + linkCardMarkdown.length + 2;
     setTimeout(() => {
       textarea.focus();
@@ -117,13 +95,9 @@ export default function MarkdownEditor({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // Capture cursor position before upload starts
     const insertPosition = textarea.selectionStart;
-
-    // Generate unique timestamp for this upload batch
     const uploadId = Date.now();
 
-    // Create placeholder text for each file
     const placeholderData = files.map((file, i) => ({
       file,
       placeholder: `![Uploading ${file.name}...](uploading-${uploadId}-${i})`,
@@ -131,7 +105,6 @@ export default function MarkdownEditor({
 
     const placeholders = placeholderData.map((p) => p.placeholder).join("\n");
 
-    // Insert placeholders immediately at cursor position
     const contentWithPlaceholders =
       content.substring(0, insertPosition) +
       "\n" +
@@ -143,8 +116,7 @@ export default function MarkdownEditor({
     const markdownValue = convertToMarkdownLineBreaks(contentWithPlaceholders);
     onChange?.(markdownValue);
 
-    // Move cursor to after the placeholders so user can continue typing
-    const newCursorPosition = insertPosition + placeholders.length + 2; // +2 for newlines
+    const newCursorPosition = insertPosition + placeholders.length + 2;
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(newCursorPosition, newCursorPosition);
@@ -152,18 +124,14 @@ export default function MarkdownEditor({
 
     if (onImageUpload) {
       try {
-        // Call custom handler - returns filenames (not full URLs)
         const filenames = await onImageUpload(files);
-
-        // Replace placeholders with actual filenames using functional update
-        // This ensures we work with the latest content (user may have typed more)
         setContent((currentContent) => {
           let updatedContent = currentContent;
           placeholderData.forEach((item, i) => {
             const actualMarkdown = `![image](${filenames[i]})`;
             updatedContent = updatedContent.replace(
               item.placeholder,
-              actualMarkdown
+              actualMarkdown,
             );
           });
           const markdownValue = convertToMarkdownLineBreaks(updatedContent);
@@ -172,18 +140,16 @@ export default function MarkdownEditor({
         });
       } catch (error) {
         console.error("Image upload failed:", error);
-
-        // Remove placeholders on error using functional update
         setContent((currentContent) => {
           let contentWithoutPlaceholders = currentContent;
           placeholderData.forEach((item) => {
             contentWithoutPlaceholders = contentWithoutPlaceholders.replace(
               item.placeholder + "\n",
-              ""
+              "",
             );
           });
           const markdownValue = convertToMarkdownLineBreaks(
-            contentWithoutPlaceholders
+            contentWithoutPlaceholders,
           );
           onChange?.(markdownValue);
           return contentWithoutPlaceholders;
@@ -191,65 +157,62 @@ export default function MarkdownEditor({
       }
     }
 
-    // Reset input
     e.target.value = "";
   };
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        id="markdown-editor"
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          minHeight: 0,
-        }}
-      >
-        <textarea
-          id="markdown-edit-textarea"
-          ref={textareaRef}
-          value={content}
-          onChange={handleContentChange}
-          style={{
-            flex: 1,
-            resize: "none",
-            minHeight: 0,
-            width: "100%",
-            padding: "12px",
-            fontSize: "16px",
-            lineHeight: "1.6",
-            border: "1px solid var(--border-color)",
-            borderRadius: "4px",
-            backgroundColor: "var(--input-background)",
-            color: "var(--text-color)",
-          }}
-          placeholder="Write your markdown here..."
+    <>
+      <textarea
+        ref={textareaRef}
+        className="editor-textarea"
+        value={content}
+        onChange={handleContentChange}
+        placeholder="Write your markdown here..."
+      />
+      <div className="editor-actions">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageUpload}
+          style={{ display: "none" }}
         />
-        <div id="editor-button-bar" style={{ padding: "8px 0" }}>
-          <label>
-            Image
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              style={{ display: "none" }}
-            />
-          </label>
-          <button onClick={handleAddLink}>Add Link</button>
-          <button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save"}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="ed-btn ed-btn--icon"
+          onClick={() => fileInputRef.current?.click()}
+          title="Insert image"
+          aria-label="Insert image"
+        >
+          <ImagePlus size={ICON_SIZE} />
+        </button>
+        <button
+          type="button"
+          className="ed-btn ed-btn--icon"
+          onClick={handleAddLink}
+          title="Insert link"
+          aria-label="Insert link"
+        >
+          <Link2 size={ICON_SIZE} />
+        </button>
+        <div className="editor-toolbar__spacer" />
+        <button
+          type="button"
+          className="ed-btn ed-btn--primary"
+          onClick={handleSave}
+          disabled={isSaving}
+          title={isSaving ? "Saving..." : "Save entry"}
+          aria-label="Save entry"
+        >
+          {isSaving ? (
+            <Loader2 size={ICON_SIZE} className="ed-spin" />
+          ) : (
+            <Save size={ICON_SIZE} />
+          )}
+          <span>{isSaving ? "Saving…" : "Save"}</span>
+        </button>
       </div>
-    </div>
+    </>
   );
 }
