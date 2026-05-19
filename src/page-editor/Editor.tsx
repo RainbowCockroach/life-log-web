@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Tags, CalendarClock, X } from "lucide-react";
 import {
   saveContent,
   uploadImages,
@@ -19,6 +20,8 @@ interface EditorProps {
   onSaveSuccess?: () => void;
 }
 
+const ICON_SIZE = 16;
+
 export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,16 +37,13 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
   const [showDateTimeSection, setShowDateTimeSection] = useState(false);
   const [customDateTime, setCustomDateTime] = useState<string>("");
 
-  // Load entry data if in edit mode, otherwise load latest location
   useEffect(() => {
     const loadEntryData = async () => {
       if (entryId) {
-        // Edit mode: load existing entry
         try {
           const entry = await fetchEntry(entryId);
           setContent(entry.content);
           setLocationTag(entry.location || null);
-          // Convert simple tag objects to full Tag objects
           setSelectedTags(
             (entry.tags || []).map((tag) => ({
               ...tag,
@@ -58,7 +58,6 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
           setError("Failed to load entry for editing");
         }
       } else {
-        // Create mode: load latest location
         try {
           const latestLocation = await getLatestLocation();
           if (latestLocation) {
@@ -66,7 +65,6 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
           }
         } catch (error) {
           console.error("Failed to load latest location:", error);
-          // Silently fail - user can still manually select a location
         }
       }
     };
@@ -76,30 +74,13 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
 
   const handleImageUpload = async (files: File[]): Promise<string[]> => {
     try {
-      // Step 1: Compress and rename images
       const processedImages = await processImages(files);
-
-      console.log("Processed images:", processedImages);
-      console.log("Compression stats:");
-      processedImages.forEach((img, i) => {
-        console.log(
-          `  ${i + 1}. ${img.originalName} → ${img.newName} (${(
-            img.size / 1024
-          ).toFixed(2)} KB)`,
-        );
-      });
-
-      // Step 2: Upload to server using the API service
       const uploadedFiles = processedImages.map((img) => img.file);
       const uploadResults = await uploadImages(uploadedFiles);
 
-      console.log("Upload results:", uploadResults);
-
-      // Track the uploaded image paths for saving with the entry
       const newPaths = uploadResults.map((result) => result.path);
       setUploadedImagePaths((prev) => [...prev, ...newPaths]);
 
-      // Store signed URLs in the map for immediate preview
       const newMap = new Map(imageUrlMap);
       uploadResults.forEach((result) => {
         newMap.set(
@@ -109,7 +90,6 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
       });
       setImageUrlMap(newMap);
 
-      // Return filenames (not URLs) to insert in markdown
       return uploadResults.map((result) => result.filename || result.path);
     } catch (error) {
       console.error("Image upload failed:", error);
@@ -118,14 +98,11 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
   };
 
   const handleContentChange = (newContent: string) => {
-    console.log("Content changed:", newContent);
     setContent(newContent);
-    // Clear messages when content changes
     setError(null);
     setSuccessMessage(null);
   };
 
-  // Extract image filenames from markdown content
   const extractImageFilenames = useCallback((markdown: string): string[] => {
     const imageRegex = /!\[.*?\]\(([^)]+)\)/g;
     const filenames: string[] = [];
@@ -133,41 +110,27 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
 
     while ((match = imageRegex.exec(markdown)) !== null) {
       const url = match[1];
-      // Extract just the filename (handle both relative and absolute URLs)
       const filename = url.split("/").pop() || url;
-
-      // Skip uploading placeholders
-      if (filename && filename.startsWith("uploading-")) {
-        continue;
-      }
-
-      // Only include if it looks like a timestamp-based filename
-      if (filename && /^\d+\.\w+/.test(filename)) {
-        filenames.push(filename);
-      }
+      if (filename && filename.startsWith("uploading-")) continue;
+      if (filename && /^\d+\.\w+/.test(filename)) filenames.push(filename);
     }
 
-    return [...new Set(filenames)]; // Remove duplicates
+    return [...new Set(filenames)];
   }, []);
 
-  // Pre-fetch signed URLs when content changes
   useEffect(() => {
     const fetchSignedUrls = async () => {
       if (!content) return;
-
       const filenames = extractImageFilenames(content);
       if (filenames.length === 0) return;
 
-      // Filter out filenames we already have valid URLs for
       const missingFilenames = filenames.filter((filename) => {
         const existingUrl = imageUrlMap.get(filename);
         if (!existingUrl) return true;
-
-        // Check if URL has expired by parsing the expires query param
         try {
           const url = new URL(existingUrl, API_CONFIG.API_BASE_URL);
           const expires = parseInt(url.searchParams.get("expires") || "0");
-          return Date.now() > expires - 60000; // Refresh if less than 1 minute left
+          return Date.now() > expires - 60000;
         } catch {
           return true;
         }
@@ -199,7 +162,6 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
     setError(null);
     setSuccessMessage(null);
 
-    // Validate required fields
     if (!locationTag) {
       setError("Location is required");
       setIsSaving(false);
@@ -207,10 +169,8 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
     }
 
     try {
-      // Generate search hint with both diacritics and stripped versions
-      // Example: "hôm nay" -> "hôm nay hom nay"
       const cleanContent = content
-        .replace(/!\[.*?\]\(.*?\)/g, " ") // image
+        .replace(/!\[.*?\]\(.*?\)/g, " ")
         .replace(/[#*_~`[\]()]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
@@ -218,13 +178,12 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
       const withDiacritics = cleanContent.toLocaleLowerCase("vi");
       const withoutDiacritics = cleanContent
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[̀-ͯ]/g, "")
         .toLowerCase();
 
       const searchHint = `${withDiacritics} ${withoutDiacritics}`.trim();
 
       if (entryId) {
-        // Update existing entry
         await updateEntry(entryId, {
           content,
           searchHint,
@@ -236,14 +195,9 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
           mediaPaths:
             uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
         });
-        setSuccessMessage(`Entry updated successfully (ID: ${entryId})`);
-        console.log("Update successful");
-        if (onSaveSuccess) {
-          onSaveSuccess();
-        }
+        setSuccessMessage(`Entry updated (ID: ${entryId})`);
+        if (onSaveSuccess) onSaveSuccess();
       } else {
-        // Create new entry
-        // Convert custom datetime to timestamp and ISO format if provided
         let customId: number | undefined;
         let createdAtISO: string | undefined;
         if (customDateTime) {
@@ -268,8 +222,6 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
 
         if (response.success) {
           setSuccessMessage(`${response.message} (ID: ${response.id})`);
-          console.log("Save successful:", response);
-          // Clear form after successful save
           setUploadedImagePaths([]);
           setLocationTag(null);
           setSelectedTags([]);
@@ -289,19 +241,48 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
   };
 
   return (
-    <div className="editor-container">
-      <div>
-        {/* Status messages */}
-        {error && <div className="error-message">Error: {error}</div>}
-        {successMessage && (
-          <div className="success-message">{successMessage}</div>
-        )}
-
-        {/* Tags field with toggle */}
-        <button onClick={() => setShowTagsSection(!showTagsSection)}>
-          {showTagsSection ? "Hide" : "Show"} Tags
+    <div className="page-container editor-page">
+      <div className="editor-toolbar">
+        <button
+          type="button"
+          className="ed-btn"
+          aria-pressed={showTagsSection}
+          onClick={() => setShowTagsSection((v) => !v)}
+          title="Tags"
+          aria-label="Toggle tags"
+        >
+          <Tags size={ICON_SIZE} />
+          <span>Tags</span>
+          {selectedTags.length > 0 && <span>· {selectedTags.length}</span>}
         </button>
 
+        {!entryId && (
+          <button
+            type="button"
+            className="ed-btn"
+            aria-pressed={showDateTimeSection}
+            onClick={() => setShowDateTimeSection((v) => !v)}
+            title="Date / time"
+            aria-label="Toggle date and time"
+          >
+            <CalendarClock size={ICON_SIZE} />
+            <span>Date</span>
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div className="editor-message editor-message--error" role="alert">
+          {error}
+        </div>
+      )}
+      {successMessage && (
+        <div className="editor-message editor-message--success" role="status">
+          {successMessage}
+        </div>
+      )}
+
+      <div className="editor-fields">
         {showTagsSection && (
           <TagAutocomplete
             selectedTags={selectedTags}
@@ -309,36 +290,32 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
           />
         )}
 
-        {/* Custom DateTime field with toggle */}
-        {!entryId && (
-          <>
-            <button
-              onClick={() => setShowDateTimeSection(!showDateTimeSection)}
-            >
-              {showDateTimeSection ? "Hide" : "Show"} Date/Time
-            </button>
-
-            {showDateTimeSection && (
-              <div>
-                <label htmlFor="custom-datetime" className="datetime-label">
-                  Entry Date/Time:{" "}
-                </label>
-                <input
-                  id="custom-datetime"
-                  type="datetime-local"
-                  value={customDateTime}
-                  onChange={(e) => setCustomDateTime(e.target.value)}
-                  className="datetime-input"
-                />
-                {customDateTime && (
-                  <button onClick={() => setCustomDateTime("")}>Clear</button>
-                )}
-              </div>
+        {!entryId && showDateTimeSection && (
+          <div className="editor-field">
+            <label htmlFor="custom-datetime" className="editor-field__label">
+              When
+            </label>
+            <input
+              id="custom-datetime"
+              type="datetime-local"
+              value={customDateTime}
+              onChange={(e) => setCustomDateTime(e.target.value)}
+              className="editor-datetime"
+            />
+            {customDateTime && (
+              <button
+                type="button"
+                className="ed-btn ed-btn--icon"
+                onClick={() => setCustomDateTime("")}
+                title="Clear date"
+                aria-label="Clear date"
+              >
+                <X size={ICON_SIZE} />
+              </button>
             )}
-          </>
+          </div>
         )}
 
-        {/* Location field */}
         <TagAutocomplete
           selectedTags={locationTag ? [locationTag] : []}
           onTagsChange={(tags) => setLocationTag(tags[0] || null)}

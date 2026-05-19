@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Plus, Tag as TagIcon, MapPin } from "lucide-react";
 import TagTree from "./TagTree";
 import TagForm from "./TagForm";
 import {
@@ -9,6 +10,7 @@ import {
   type Tag,
   type CreateTagRequest,
 } from "../services/api";
+import "./TagsPage.css";
 
 const TagsPage: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
@@ -77,13 +79,23 @@ const TagsPage: React.FC = () => {
   const regularTags = tags.filter((tag) => tag.type !== "location");
   const locationTags = tags.filter((tag) => tag.type === "location");
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (loading) {
+    return (
+      <div className="page-container">
+        <div className="tags-page__empty">Loading…</div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="page-container">
+        <div className="tags-page__message">{error}</div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1>Tags and Locations Management</h1>
-
+    <div className="page-container tags-page">
       {showForm && (
         <TagForm
           tag={editingTag}
@@ -94,29 +106,61 @@ const TagsPage: React.FC = () => {
         />
       )}
 
-      <div>
-        <div>
-          <h2>Tags</h2>
-          <button onClick={() => handleCreate("tag")}>Create New Tag</button>
-          <TagTree
-            tags={regularTags}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        </div>
-
-        <div>
-          <h2>Locations</h2>
-          <button onClick={() => handleCreate("location")}>
-            Create New Location
+      <section className="tags-page__section">
+        <div className="tags-page__section-header">
+          <h2 className="tags-page__section-title">
+            <TagIcon size={14} aria-hidden />
+            Tags
+            <span className="tags-page__section-count">
+              {regularTags.length}
+            </span>
+          </h2>
+          <span className="tags-page__section-spacer" />
+          <button
+            type="button"
+            className="tg-btn tg-btn--primary"
+            onClick={() => handleCreate("tag")}
+            title="Create new tag"
+            aria-label="Create new tag"
+          >
+            <Plus size={14} />
+            <span className="tg-btn__label">New tag</span>
           </button>
-          <TagTree
-            tags={locationTags}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
         </div>
-      </div>
+        <TagTree
+          tags={regularTags}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </section>
+
+      <section className="tags-page__section">
+        <div className="tags-page__section-header">
+          <h2 className="tags-page__section-title">
+            <MapPin size={14} aria-hidden />
+            Locations
+            <span className="tags-page__section-count">
+              {locationTags.length}
+            </span>
+          </h2>
+          <span className="tags-page__section-spacer" />
+          <button
+            type="button"
+            className="tg-btn tg-btn--primary"
+            onClick={() => handleCreate("location")}
+            title="Create new location"
+            aria-label="Create new location"
+          >
+            <Plus size={14} />
+            <span className="tg-btn__label">New location</span>
+          </button>
+        </div>
+        <TagTree
+          tags={locationTags}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </section>
     </div>
   );
 };
