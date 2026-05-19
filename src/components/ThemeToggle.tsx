@@ -1,6 +1,7 @@
 import React from "react";
-import { useThemeContext } from "../contexts/ThemeContext";
-import type { Theme } from "../hooks/useTheme";
+import { Sun, Moon, MonitorCog } from "lucide-react";
+import { useThemeContext } from "../theming/ThemeProvider";
+import type { Mode as Theme } from "../theming/types";
 
 interface ThemeToggleProps {
   variant?: "button" | "select" | "toggle";
@@ -14,7 +15,8 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   variant = "button",
   showLabels = true,
 }) => {
-  const { theme, resolvedTheme, setTheme, isAuto } = useThemeContext();
+  const { mode: theme, resolvedMode: resolvedTheme, setMode: setTheme, mode } = useThemeContext();
+  const isAuto = mode === "auto";
 
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);
@@ -23,13 +25,13 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   const getThemeIcon = (themeType: Theme) => {
     switch (themeType) {
       case "light":
-        return "☀️";
+        return <Sun size={16} />;
       case "dark":
-        return "🌙";
+        return <Moon size={16} />;
       case "auto":
-        return "🌗";
+        return <MonitorCog size={16} />;
       default:
-        return "☀️";
+        return <Sun size={16} />;
     }
   };
 
@@ -71,31 +73,12 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   if (variant === "toggle") {
     return (
       <button
+        className={showLabels ? undefined : "nav-icon-btn"}
         onClick={() => {
           // Cycle through themes: light → dark → auto → light
           const nextTheme: Theme =
             theme === "light" ? "dark" : theme === "dark" ? "auto" : "light";
           handleThemeChange(nextTheme);
-        }}
-        style={{
-          backgroundColor: "var(--button-background)",
-          color: "var(--text-color)",
-          border: "1px solid var(--border-color)",
-          borderRadius: "6px",
-          padding: "6px 12px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-          fontSize: "14px",
-          transition: "background-color 0.2s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor =
-            "var(--button-hover-background)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "var(--button-background)";
         }}
         aria-label={`Current theme: ${getThemeLabel(theme)}${
           isAuto ? ` (${resolvedTheme})` : ""
@@ -104,18 +87,12 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
           isAuto ? ` (currently ${resolvedTheme})` : ""
         }`}
       >
-        <span style={{ fontSize: "16px" }}>{getThemeIcon(theme)}</span>
+        {getThemeIcon(theme)}
         {showLabels && (
           <span>
             {getThemeLabel(theme)}
             {isAuto && (
-              <span
-                style={{
-                  color: "var(--secondary-color)",
-                  fontSize: "12px",
-                  marginLeft: "4px",
-                }}
-              >
+              <span style={{ opacity: 0.7, fontSize: "12px", marginLeft: "4px" }}>
                 ({resolvedTheme})
               </span>
             )}

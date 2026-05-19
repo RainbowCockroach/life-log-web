@@ -15,15 +15,8 @@ export default function TagChip({ tag, onRemove }: TagProps) {
 
   return (
     <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "4px 8px",
-        borderRadius: "4px",
-        fontSize: "13px",
-        backgroundColor,
-        color: textColor,
-      }}
+      className="tag"
+      style={{ backgroundColor, color: textColor }}
     >
       <span>{tag.name}</span>
       {onRemove && (
