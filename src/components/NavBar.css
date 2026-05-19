@@ -1,0 +1,125 @@
+.app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--color-paper) 88%, transparent);
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-body-family);
+  min-width: 0;
+}
+
+.app-nav__links {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.app-nav__spacer {
+  flex: 1 1 auto;
+}
+
+.app-nav__tools {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Ghost control: link / button / select */
+.app-nav .nav-pill,
+.app-nav button,
+.app-nav select {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 8px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.app-nav .nav-pill:hover,
+.app-nav button:hover,
+.app-nav select:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.app-nav .nav-pill:focus-visible,
+.app-nav button:focus-visible,
+.app-nav select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* Active route — subtle accent tint, no heavy border */
+.app-nav .nav-pill--active {
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+/* API key missing */
+.app-nav .nav-pill--danger {
+  color: #fff;
+  background: var(--color-error, #dc2626);
+}
+.app-nav .nav-pill--danger:hover {
+  background: color-mix(in srgb, var(--color-error, #dc2626) 85%, #000);
+}
+
+/* Square icon-only buttons */
+.app-nav .nav-icon-btn {
+  width: 30px;
+  padding: 0;
+}
+
+/* Theme picker — compact, faint border so it reads as a control */
+.app-nav select {
+  max-width: 110px;
+  padding-right: 22px;
+  border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 11px) 50%, calc(100% - 7px) 50%;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+.app-nav select::-ms-expand {
+  display: none;
+}
+.app-nav select option {
+  background: var(--color-paper);
+  color: var(--color-text);
+}
+
+/* Tighter on small screens */
+@media (max-width: 480px) {
+  .app-nav {
+    padding: 3px 4px;
+    gap: 2px;
+  }
+  .app-nav select {
+    max-width: 88px;
+    font-size: 12px;
+  }
+}

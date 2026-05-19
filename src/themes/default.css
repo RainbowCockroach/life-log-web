@@ -48,6 +48,8 @@
   flex: 1;
   overflow: auto;
   max-width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
 }
 /* Entry view */
 /* Day group container */

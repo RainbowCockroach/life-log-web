@@ -28,6 +28,7 @@
     "browser-image-compression": "^2.0.2",
     "heic2any": "^0.0.4",
     "js-cookie": "^3.0.5",
+    "lucide-react": "^1.16.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
