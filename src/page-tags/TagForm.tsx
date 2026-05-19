@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { X } from "lucide-react";
 import type { Tag, CreateTagRequest } from "../services/api";
 
 interface TagFormProps {
@@ -20,7 +21,7 @@ const TagForm: React.FC<TagFormProps> = ({
   const [searchHint, setSearchHint] = useState(tag?.searchHint || "");
   const [type, setType] = useState(tag?.type || defaultType || "tag");
   const [config, setConfig] = useState(
-    tag?.config ? JSON.stringify(tag.config) : "{}"
+    tag?.config ? JSON.stringify(tag.config, null, 2) : "{}"
   );
   const [parentId, setParentId] = useState<number | null>(
     tag?.parent?.id || null
@@ -46,65 +47,109 @@ const TagForm: React.FC<TagFormProps> = ({
     (t) => t.id !== tag?.id && t.type === type
   );
 
+  const heading = tag
+    ? `Edit ${type === "location" ? "location" : "tag"}`
+    : `New ${type === "location" ? "location" : "tag"}`;
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-    >
-      <label>
-        Name:
+    <form className="tag-form" onSubmit={handleSubmit}>
+      <div className="tag-form__header">
+        <h3 className="tag-form__title">{heading}</h3>
+        <button
+          type="button"
+          className="tg-btn tg-btn--icon"
+          onClick={onCancel}
+          title="Close"
+          aria-label="Close form"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="tag-form__field">
+        <label className="tag-form__label" htmlFor="tag-form-name">
+          Name
+        </label>
         <input
+          id="tag-form-name"
+          className="tag-form__input"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
+          autoFocus
         />
-      </label>
-      <label>
-        Search Hint:
+      </div>
+
+      <div className="tag-form__field">
+        <label className="tag-form__label" htmlFor="tag-form-hint">
+          Search hint
+        </label>
         <input
+          id="tag-form-hint"
+          className="tag-form__input"
           type="text"
           value={searchHint}
           onChange={(e) => setSearchHint(e.target.value)}
           required
         />
-      </label>
-      <label>
-        Type:
-        <input
-          type="text"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-        />
-      </label>
-      <label>
-        Config (JSON):
+      </div>
+
+      <div className="tag-form__row">
+        <div className="tag-form__field">
+          <label className="tag-form__label" htmlFor="tag-form-type">
+            Type
+          </label>
+          <input
+            id="tag-form-type"
+            className="tag-form__input"
+            type="text"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          />
+        </div>
+        <div className="tag-form__field">
+          <label className="tag-form__label" htmlFor="tag-form-parent">
+            Parent
+          </label>
+          <select
+            id="tag-form-parent"
+            className="tag-form__select"
+            value={parentId || ""}
+            onChange={(e) =>
+              setParentId(e.target.value ? parseInt(e.target.value) : null)
+            }
+          >
+            <option value="">None</option>
+            {parentOptions.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="tag-form__field">
+        <label className="tag-form__label" htmlFor="tag-form-config">
+          Config (JSON)
+        </label>
         <textarea
+          id="tag-form-config"
+          className="tag-form__textarea"
           value={config}
           onChange={(e) => setConfig(e.target.value)}
-          rows={3}
+          rows={4}
+          spellCheck={false}
         />
-      </label>
-      <label>
-        Parent:
-        <select
-          value={parentId || ""}
-          onChange={(e) =>
-            setParentId(e.target.value ? parseInt(e.target.value) : null)
-          }
-        >
-          <option value="">None</option>
-          {parentOptions.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div style={{ display: "flex", gap: "8px" }}>
-        <button type="submit">Save</button>
-        <button type="button" onClick={onCancel}>
+      </div>
+
+      <div className="tag-form__actions">
+        <button type="button" className="tg-btn" onClick={onCancel}>
           Cancel
+        </button>
+        <button type="submit" className="tg-btn tg-btn--primary">
+          {tag ? "Save changes" : "Create"}
         </button>
       </div>
     </form>
