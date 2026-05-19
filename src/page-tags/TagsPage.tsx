@@ -96,8 +96,6 @@ const TagsPage: React.FC = () => {
 
   return (
     <div className="page-container tags-page">
-      <h1 className="tags-page__title">Tags &amp; Locations</h1>
-
       {showForm && (
         <TagForm
           tag={editingTag}

@@ -29,9 +29,6 @@ const TagNode: React.FC<TagNodeProps> = ({ tag, onEdit, onDelete }) => {
           aria-hidden
         />
         <span className="tag-node__name">{tag.name}</span>
-        {tag.searchHint && (
-          <span className="tag-node__hint">{tag.searchHint}</span>
-        )}
         <span className="tag-node__actions">
           <button
             type="button"
