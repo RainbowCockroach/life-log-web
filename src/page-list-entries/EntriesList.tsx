@@ -1,19 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { searchEntries, deleteEntry, fetchTags, type Entry, type Tag } from "../services/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Search,
+  X,
+  Filter,
+  Pencil,
+  Trash2,
+  Check,
+  ArrowUp,
+} from "lucide-react";
 import "../themes/default.css";
+import "./EntriesList.css";
 import MarkdownViewer from "../components/MarkdownViewer";
 
 export default function EntriesList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-
-  // Get page and search query from URL params
-  const getPageFromParams = useCallback(() => {
-    const pageParam = searchParams.get("page");
-    const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
-    return isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
-  }, [searchParams]);
 
   const getSearchQueryFromParams = useCallback(() => {
     return searchParams.get("q") || "";
@@ -24,18 +27,27 @@ export default function EntriesList() {
     return tagIdsParam ? tagIdsParam.split(",").map(id => parseInt(id, 10)) : [];
   }, [searchParams]);
 
-  const page = getPageFromParams();
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState(getSearchQueryFromParams());
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(getTagIdsFromParams());
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [showTagFilter, setShowTagFilter] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const pageSize = 10;
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(false);
+  const pageRef = useRef(1);
+  const queryRef = useRef(searchQuery);
+  const tagIdsRef = useRef(selectedTagIds);
 
   // Load all tags
   useEffect(() => {
@@ -51,21 +63,27 @@ export default function EntriesList() {
     loadTags();
   }, []);
 
+  // Reset and load first page when query/tags change
   useEffect(() => {
-    const loadEntries = async () => {
+    const loadFirst = async () => {
       setLoading(true);
       setError(null);
+      queryRef.current = searchQuery;
+      tagIdsRef.current = selectedTagIds;
+      pageRef.current = 1;
 
       try {
         const response = await searchEntries({
           query: searchQuery || undefined,
           tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
-          page,
+          page: 1,
           pageSize,
         });
         setEntries(response.entries);
         setTotal(response.total);
         setHasMore(response.hasMore);
+        hasMoreRef.current = response.hasMore;
+        setPage(1);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load entries");
         console.error("Error loading entries:", err);
@@ -74,8 +92,35 @@ export default function EntriesList() {
       }
     };
 
-    loadEntries();
-  }, [page, searchQuery, selectedTagIds]);
+    loadFirst();
+  }, [searchQuery, selectedTagIds]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMoreRef.current) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const nextPage = pageRef.current + 1;
+
+    try {
+      const response = await searchEntries({
+        query: queryRef.current || undefined,
+        tagIds: tagIdsRef.current.length > 0 ? tagIdsRef.current : undefined,
+        page: nextPage,
+        pageSize,
+      });
+      setEntries(prev => [...prev, ...response.entries]);
+      setHasMore(response.hasMore);
+      hasMoreRef.current = response.hasMore;
+      pageRef.current = nextPage;
+      setPage(nextPage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load more entries");
+      console.error("Error loading more entries:", err);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }, []);
 
   // Sync search query state with URL parameters
   useEffect(() => {
@@ -95,32 +140,35 @@ export default function EntriesList() {
     }
   }, [searchParams, selectedTagIds, getTagIdsFromParams]);
 
-  // Validate page number and redirect if invalid
+  // IntersectionObserver for infinite scroll
   useEffect(() => {
-    if (total > 0) {
-      const maxPage = Math.ceil(total / pageSize);
-      if (page > maxPage) {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set("page", maxPage.toString());
-        setSearchParams(newParams);
-      }
-    }
-  }, [total, page, pageSize, setSearchParams, searchParams]);
+    const node = sentinelRef.current;
+    if (!node) return;
 
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set("page", (page - 1).toString());
-      setSearchParams(newParams);
-    }
-  };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMore();
+        }
+      },
+      { rootMargin: "400px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loadMore, entries.length]);
 
-  const handleNextPage = () => {
-    if (hasMore) {
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set("page", (page + 1).toString());
-      setSearchParams(newParams);
-    }
+  // Back-to-top visibility on scroll
+  useEffect(() => {
+    const onScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleBackToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const formatDate = (dateString: string) => {
@@ -165,22 +213,17 @@ export default function EntriesList() {
 
     try {
       await deleteEntry(entryId);
-      // Reload entries after deletion
+      // Reload all currently visible pages
       const response = await searchEntries({
         query: searchQuery || undefined,
         tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
-        page,
-        pageSize,
+        page: 1,
+        pageSize: pageSize * page,
       });
       setEntries(response.entries);
       setTotal(response.total);
       setHasMore(response.hasMore);
-      // If current page is empty and not first page, go back one page
-      if (response.entries.length === 0 && page > 1) {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set("page", (page - 1).toString());
-        setSearchParams(newParams);
-      }
+      hasMoreRef.current = response.hasMore;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete entry");
       console.error("Error deleting entry:", err);
@@ -195,7 +238,6 @@ export default function EntriesList() {
     } else {
       newParams.delete("q");
     }
-    newParams.set("page", "1"); // Reset to first page on new search
     setSearchParams(newParams);
   };
 
@@ -203,7 +245,6 @@ export default function EntriesList() {
     setSearchQuery("");
     const newParams = new URLSearchParams(searchParams);
     newParams.delete("q");
-    newParams.set("page", "1");
     setSearchParams(newParams);
   };
 
@@ -219,7 +260,6 @@ export default function EntriesList() {
     } else {
       newParams.delete("tagIds");
     }
-    newParams.set("page", "1"); // Reset to first page when filter changes
     setSearchParams(newParams);
   };
 
@@ -227,76 +267,98 @@ export default function EntriesList() {
     setSelectedTagIds([]);
     const newParams = new URLSearchParams(searchParams);
     newParams.delete("tagIds");
-    newParams.set("page", "1");
     setSearchParams(newParams);
   };
 
   return (
     <div className="page-container">
-      <div style={{ marginBottom: "20px" }}>
-        <div style={{ marginBottom: "10px" }}>
+      <div className="entries-toolbar">
+        <div className="entries-toolbar__search">
+          <span className="entries-toolbar__search-icon">
+            <Search size={14} aria-hidden="true" />
+          </span>
           <input
             type="text"
-            placeholder="Search ..."
+            className="entries-toolbar__search-input"
+            placeholder="Search entries"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
+            aria-label="Search entries"
           />
           {searchQuery && (
-            <button onClick={handleClearSearch} style={{ marginLeft: "10px" }}>
+            <button
+              type="button"
+              className="entries-toolbar__search-clear"
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+
+        {allTags.length > 0 && (
+          <button
+            type="button"
+            className="entries-toolbar__btn"
+            onClick={() => setShowTagFilter(!showTagFilter)}
+            aria-pressed={showTagFilter}
+            aria-label="Toggle tag filter"
+            title="Filter by tags"
+          >
+            <Filter size={16} aria-hidden="true" />
+            {selectedTagIds.length > 0 && (
+              <span className="entries-toolbar__badge">{selectedTagIds.length}</span>
+            )}
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="entries-toolbar__btn"
+          onClick={() => setEditMode(!editMode)}
+          aria-pressed={editMode}
+          aria-label={editMode ? "Exit edit mode" : "Enter edit mode"}
+          title={editMode ? "Exit edit mode" : "Edit mode"}
+        >
+          <Pencil size={16} aria-hidden="true" />
+        </button>
+      </div>
+
+      {showTagFilter && allTags.length > 0 && (
+        <div className="entries-tagfilter">
+          {allTags.map((tag) => {
+            const isSelected = selectedTagIds.includes(tag.id);
+            return (
+              <button
+                type="button"
+                key={tag.id}
+                className="entries-tagfilter__chip"
+                onClick={() => handleToggleTag(tag.id)}
+                aria-pressed={isSelected}
+              >
+                {isSelected && <Check size={12} aria-hidden="true" />}
+                {tag.name}
+              </button>
+            );
+          })}
+          {selectedTagIds.length > 0 && (
+            <button
+              type="button"
+              className="entries-tagfilter__clear"
+              onClick={handleClearTagFilter}
+            >
               Clear
             </button>
           )}
         </div>
-        {allTags.length > 0 && (
-          <div style={{ marginBottom: "10px" }}>
-            <button onClick={() => setShowTagFilter(!showTagFilter)}>
-              {showTagFilter ? "Hide" : "Show"} tag filter
-              {selectedTagIds.length > 0 && ` (${selectedTagIds.length})`}
-            </button>
-            {showTagFilter && (
-              <div style={{ marginTop: "10px" }}>
-                {selectedTagIds.length > 0 && (
-                  <button onClick={handleClearTagFilter} style={{ marginBottom: "10px" }}>
-                    Clear all
-                  </button>
-                )}
-                <div>
-                  {allTags.map((tag) => {
-                    const isSelected = selectedTagIds.includes(tag.id);
-                    return (
-                      <button
-                        key={tag.id}
-                        onClick={() => handleToggleTag(tag.id)}
-                        style={{
-                          marginRight: "5px",
-                          marginBottom: "5px",
-                          fontWeight: isSelected ? "bold" : "normal",
-                        }}
-                      >
-                        {isSelected ? "✓ " : ""}{tag.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        <button onClick={() => setEditMode(!editMode)}>
-          {editMode ? "Exit Edit Mode" : "Edit Mode"}
-        </button>
-      </div>
+      )}
 
-      {error && <div>Error: {error}</div>}
+      {error && <div className="entries-status entries-status--error">Error: {error}</div>}
 
       {(searchQuery || selectedTagIds.length > 0) && !loading && (
-        <div
-          style={{
-            marginBottom: "10px",
-            fontSize: "14px",
-            color: "var(--secondary-color)",
-          }}
-        >
+        <div className="entries-status">
           {total === 0
             ? `No entries found${searchQuery ? ` for "${searchQuery}"` : ""}${selectedTagIds.length > 0 ? " with selected tags" : ""}`
             : `Found ${total} result${total === 1 ? "" : "s"}${searchQuery ? ` for "${searchQuery}"` : ""}${selectedTagIds.length > 0 ? ` with ${selectedTagIds.length} tag${selectedTagIds.length === 1 ? "" : "s"}` : ""}`}
@@ -340,12 +402,24 @@ export default function EntriesList() {
                               />
                               {editMode && (
                                 <div className="entry-actions">
-                                  <button onClick={() => handleEdit(entry.id)}>
+                                  <button
+                                    type="button"
+                                    className="entry-actions__btn"
+                                    onClick={() => handleEdit(entry.id)}
+                                    aria-label="Edit entry"
+                                    title="Edit entry"
+                                  >
+                                    <Pencil size={14} aria-hidden="true" />
                                     Edit
                                   </button>
                                   <button
+                                    type="button"
+                                    className="entry-actions__btn entry-actions__btn--danger"
                                     onClick={() => handleDelete(entry.id)}
+                                    aria-label="Delete entry"
+                                    title="Delete entry"
                                   >
+                                    <Trash2 size={14} aria-hidden="true" />
                                     Delete
                                   </button>
                                 </div>
@@ -361,20 +435,28 @@ export default function EntriesList() {
             </div>
           )}
 
-          {total > 0 && (
-            <div style={{ marginTop: "40px", textAlign: "center" }}>
-              <button onClick={handlePreviousPage} disabled={page === 1}>
-                ᐊᐊᐊ
-              </button>
-              <span style={{ margin: "0 20px" }}>
-                Page {page} of {Math.ceil(total / pageSize)}
-              </span>
-              <button onClick={handleNextPage} disabled={!hasMore}>
-                ᐅᐅᐅ
-              </button>
-            </div>
+          {hasMore && <div ref={sentinelRef} className="entries-sentinel" aria-hidden="true" />}
+
+          {loadingMore && (
+            <div className="entries-status entries-status--center">Loading more…</div>
+          )}
+
+          {!hasMore && entries.length > 0 && total > pageSize && (
+            <div className="entries-status entries-status--center">End of entries</div>
           )}
         </>
+      )}
+
+      {showBackToTop && (
+        <button
+          type="button"
+          className="entries-backtotop"
+          onClick={handleBackToTop}
+          aria-label="Back to top"
+          title="Back to top"
+        >
+          <ArrowUp size={18} aria-hidden="true" />
+        </button>
       )}
     </div>
   );
