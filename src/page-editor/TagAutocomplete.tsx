@@ -3,6 +3,7 @@ import { searchTagSuggestions, createTag, type Tag } from "../services/api";
 import type { AutocompleteOption } from "../components/Autocomplete";
 import Autocomplete from "../components/Autocomplete";
 import TagChip from "../components/TagChip";
+import { randomTagColor } from "../utils/randomTagColor";
 
 interface TagAutocompleteProps {
   selectedTags: Tag[];
@@ -10,7 +11,6 @@ interface TagAutocompleteProps {
   tagType?: string;
   label?: string;
   placeholder?: string;
-  defaultColor?: string;
   singleSelect?: boolean;
 }
 
@@ -20,7 +20,6 @@ export default function TagAutocomplete({
   tagType = "tag",
   label = "Tags",
   placeholder = "Type to search tags...",
-  defaultColor = "#e0e0e0",
   singleSelect = false,
 }: TagAutocompleteProps) {
   const [inputValue, setInputValue] = useState("");
@@ -74,10 +73,7 @@ export default function TagAutocomplete({
           name: option.metadata.name,
           searchHint: option.metadata.name,
           type: tagType,
-          config: {
-            backgroundColor: defaultColor,
-            textColor: "#000000",
-          },
+          config: randomTagColor(),
         });
         if (singleSelect) {
           onTagsChange([newTag]);

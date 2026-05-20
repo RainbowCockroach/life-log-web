@@ -232,21 +232,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   padding: 0;
-  color: var(--color-text);
-  background: var(--color-paper);
-  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-paper) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
   border-radius: var(--radius-pill);
   cursor: pointer;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-text) 16%, transparent);
-  transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
   z-index: 50;
 }
 
 .entries-backtotop:hover {
-  background: color-mix(in srgb, var(--color-text) 8%, var(--color-paper));
+  opacity: 1;
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-paper) 85%, transparent);
 }
 
 .entries-backtotop:focus-visible {

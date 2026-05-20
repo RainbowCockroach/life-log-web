@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
 import type { Tag, CreateTagRequest } from "../services/api";
+import { randomTagColor } from "../utils/randomTagColor";
 
 interface TagFormProps {
   tag?: Tag | null;
@@ -20,8 +21,8 @@ const TagForm: React.FC<TagFormProps> = ({
   const [name, setName] = useState(tag?.name || "");
   const [searchHint, setSearchHint] = useState(tag?.searchHint || "");
   const [type, setType] = useState(tag?.type || defaultType || "tag");
-  const [config, setConfig] = useState(
-    tag?.config ? JSON.stringify(tag.config, null, 2) : "{}"
+  const [config, setConfig] = useState(() =>
+    JSON.stringify(tag?.config ?? randomTagColor(), null, 2)
   );
   const [parentId, setParentId] = useState<number | null>(
     tag?.parent?.id || null

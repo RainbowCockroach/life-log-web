@@ -322,7 +322,6 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
           tagType="location"
           label="Location *"
           placeholder="Enter location (required)..."
-          defaultColor="#10b981"
           singleSelect={true}
         />
       </div>
