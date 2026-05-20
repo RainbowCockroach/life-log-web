@@ -128,12 +128,6 @@ export default function TagAutocomplete({
         selectedTags.map((tag) => (
           <TagChip key={tag.id} tag={tag} onRemove={handleRemoveTag} />
         ))}
-
-      {singleSelect && selectedTags.length > 0 && (
-        <div className="editor-field__hint">
-          Remove current selection to choose a different {label.toLowerCase()}
-        </div>
-      )}
     </div>
   );
 }
