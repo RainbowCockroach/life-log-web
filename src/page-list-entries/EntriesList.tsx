@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { searchEntries, deleteEntry, fetchTags, type Entry, type Tag } from "../services/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -6,10 +6,9 @@ import {
   X,
   Filter,
   Pencil,
-  ChevronLeft,
-  ChevronRight,
   Trash2,
   Check,
+  ArrowUp,
 } from "lucide-react";
 import "../themes/default.css";
 import "./EntriesList.css";
@@ -18,13 +17,6 @@ import MarkdownViewer from "../components/MarkdownViewer";
 export default function EntriesList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-
-  // Get page and search query from URL params
-  const getPageFromParams = useCallback(() => {
-    const pageParam = searchParams.get("page");
-    const pageNum = pageParam ? parseInt(pageParam, 10) : 1;
-    return isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
-  }, [searchParams]);
 
   const getSearchQueryFromParams = useCallback(() => {
     return searchParams.get("q") || "";
@@ -35,18 +27,27 @@ export default function EntriesList() {
     return tagIdsParam ? tagIdsParam.split(",").map(id => parseInt(id, 10)) : [];
   }, [searchParams]);
 
-  const page = getPageFromParams();
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState(getSearchQueryFromParams());
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(getTagIdsFromParams());
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [showTagFilter, setShowTagFilter] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const pageSize = 10;
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(false);
+  const pageRef = useRef(1);
+  const queryRef = useRef(searchQuery);
+  const tagIdsRef = useRef(selectedTagIds);
 
   // Load all tags
   useEffect(() => {
@@ -62,21 +63,27 @@ export default function EntriesList() {
     loadTags();
   }, []);
 
+  // Reset and load first page when query/tags change
   useEffect(() => {
-    const loadEntries = async () => {
+    const loadFirst = async () => {
       setLoading(true);
       setError(null);
+      queryRef.current = searchQuery;
+      tagIdsRef.current = selectedTagIds;
+      pageRef.current = 1;
 
       try {
         const response = await searchEntries({
           query: searchQuery || undefined,
           tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
-          page,
+          page: 1,
           pageSize,
         });
         setEntries(response.entries);
         setTotal(response.total);
         setHasMore(response.hasMore);
+        hasMoreRef.current = response.hasMore;
+        setPage(1);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load entries");
         console.error("Error loading entries:", err);
@@ -85,8 +92,35 @@ export default function EntriesList() {
       }
     };
 
-    loadEntries();
-  }, [page, searchQuery, selectedTagIds]);
+    loadFirst();
+  }, [searchQuery, selectedTagIds]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMoreRef.current) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const nextPage = pageRef.current + 1;
+
+    try {
+      const response = await searchEntries({
+        query: queryRef.current || undefined,
+        tagIds: tagIdsRef.current.length > 0 ? tagIdsRef.current : undefined,
+        page: nextPage,
+        pageSize,
+      });
+      setEntries(prev => [...prev, ...response.entries]);
+      setHasMore(response.hasMore);
+      hasMoreRef.current = response.hasMore;
+      pageRef.current = nextPage;
+      setPage(nextPage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load more entries");
+      console.error("Error loading more entries:", err);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }, []);
 
   // Sync search query state with URL parameters
   useEffect(() => {
@@ -106,32 +140,35 @@ export default function EntriesList() {
     }
   }, [searchParams, selectedTagIds, getTagIdsFromParams]);
 
-  // Validate page number and redirect if invalid
+  // IntersectionObserver for infinite scroll
   useEffect(() => {
-    if (total > 0) {
-      const maxPage = Math.ceil(total / pageSize);
-      if (page > maxPage) {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set("page", maxPage.toString());
-        setSearchParams(newParams);
-      }
-    }
-  }, [total, page, pageSize, setSearchParams, searchParams]);
+    const node = sentinelRef.current;
+    if (!node) return;
 
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set("page", (page - 1).toString());
-      setSearchParams(newParams);
-    }
-  };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMore();
+        }
+      },
+      { rootMargin: "400px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loadMore, entries.length]);
 
-  const handleNextPage = () => {
-    if (hasMore) {
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set("page", (page + 1).toString());
-      setSearchParams(newParams);
-    }
+  // Back-to-top visibility on scroll
+  useEffect(() => {
+    const onScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleBackToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const formatDate = (dateString: string) => {
@@ -176,22 +213,17 @@ export default function EntriesList() {
 
     try {
       await deleteEntry(entryId);
-      // Reload entries after deletion
+      // Reload all currently visible pages
       const response = await searchEntries({
         query: searchQuery || undefined,
         tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
-        page,
-        pageSize,
+        page: 1,
+        pageSize: pageSize * page,
       });
       setEntries(response.entries);
       setTotal(response.total);
       setHasMore(response.hasMore);
-      // If current page is empty and not first page, go back one page
-      if (response.entries.length === 0 && page > 1) {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set("page", (page - 1).toString());
-        setSearchParams(newParams);
-      }
+      hasMoreRef.current = response.hasMore;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete entry");
       console.error("Error deleting entry:", err);
@@ -206,7 +238,6 @@ export default function EntriesList() {
     } else {
       newParams.delete("q");
     }
-    newParams.set("page", "1"); // Reset to first page on new search
     setSearchParams(newParams);
   };
 
@@ -214,7 +245,6 @@ export default function EntriesList() {
     setSearchQuery("");
     const newParams = new URLSearchParams(searchParams);
     newParams.delete("q");
-    newParams.set("page", "1");
     setSearchParams(newParams);
   };
 
@@ -230,7 +260,6 @@ export default function EntriesList() {
     } else {
       newParams.delete("tagIds");
     }
-    newParams.set("page", "1"); // Reset to first page when filter changes
     setSearchParams(newParams);
   };
 
@@ -238,7 +267,6 @@ export default function EntriesList() {
     setSelectedTagIds([]);
     const newParams = new URLSearchParams(searchParams);
     newParams.delete("tagIds");
-    newParams.set("page", "1");
     setSearchParams(newParams);
   };
 
@@ -407,34 +435,28 @@ export default function EntriesList() {
             </div>
           )}
 
-          {total > 0 && (
-            <div className="entries-pagination">
-              <button
-                type="button"
-                className="entries-pagination__btn"
-                onClick={handlePreviousPage}
-                disabled={page === 1}
-                aria-label="Previous page"
-                title="Previous page"
-              >
-                <ChevronLeft size={18} aria-hidden="true" />
-              </button>
-              <span>
-                Page {page} of {Math.ceil(total / pageSize)}
-              </span>
-              <button
-                type="button"
-                className="entries-pagination__btn"
-                onClick={handleNextPage}
-                disabled={!hasMore}
-                aria-label="Next page"
-                title="Next page"
-              >
-                <ChevronRight size={18} aria-hidden="true" />
-              </button>
-            </div>
+          {hasMore && <div ref={sentinelRef} className="entries-sentinel" aria-hidden="true" />}
+
+          {loadingMore && (
+            <div className="entries-status entries-status--center">Loading more…</div>
+          )}
+
+          {!hasMore && entries.length > 0 && total > pageSize && (
+            <div className="entries-status entries-status--center">End of entries</div>
           )}
         </>
+      )}
+
+      {showBackToTop && (
+        <button
+          type="button"
+          className="entries-backtotop"
+          onClick={handleBackToTop}
+          aria-label="Back to top"
+          title="Back to top"
+        >
+          <ArrowUp size={18} aria-hidden="true" />
+        </button>
       )}
     </div>
   );
