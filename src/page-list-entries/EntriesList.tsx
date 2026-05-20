@@ -1,7 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
 import { searchEntries, deleteEntry, fetchTags, type Entry, type Tag } from "../services/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Search,
+  X,
+  Filter,
+  Pencil,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  Check,
+} from "lucide-react";
 import "../themes/default.css";
+import "./EntriesList.css";
 import MarkdownViewer from "../components/MarkdownViewer";
 
 export default function EntriesList() {
@@ -233,70 +244,93 @@ export default function EntriesList() {
 
   return (
     <div className="page-container">
-      <div style={{ marginBottom: "20px" }}>
-        <div style={{ marginBottom: "10px" }}>
+      <div className="entries-toolbar">
+        <div className="entries-toolbar__search">
+          <span className="entries-toolbar__search-icon">
+            <Search size={14} aria-hidden="true" />
+          </span>
           <input
             type="text"
-            placeholder="Search ..."
+            className="entries-toolbar__search-input"
+            placeholder="Search entries"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
+            aria-label="Search entries"
           />
           {searchQuery && (
-            <button onClick={handleClearSearch} style={{ marginLeft: "10px" }}>
+            <button
+              type="button"
+              className="entries-toolbar__search-clear"
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+
+        {allTags.length > 0 && (
+          <button
+            type="button"
+            className="entries-toolbar__btn"
+            onClick={() => setShowTagFilter(!showTagFilter)}
+            aria-pressed={showTagFilter}
+            aria-label="Toggle tag filter"
+            title="Filter by tags"
+          >
+            <Filter size={16} aria-hidden="true" />
+            {selectedTagIds.length > 0 && (
+              <span className="entries-toolbar__badge">{selectedTagIds.length}</span>
+            )}
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="entries-toolbar__btn"
+          onClick={() => setEditMode(!editMode)}
+          aria-pressed={editMode}
+          aria-label={editMode ? "Exit edit mode" : "Enter edit mode"}
+          title={editMode ? "Exit edit mode" : "Edit mode"}
+        >
+          <Pencil size={16} aria-hidden="true" />
+        </button>
+      </div>
+
+      {showTagFilter && allTags.length > 0 && (
+        <div className="entries-tagfilter">
+          {allTags.map((tag) => {
+            const isSelected = selectedTagIds.includes(tag.id);
+            return (
+              <button
+                type="button"
+                key={tag.id}
+                className="entries-tagfilter__chip"
+                onClick={() => handleToggleTag(tag.id)}
+                aria-pressed={isSelected}
+              >
+                {isSelected && <Check size={12} aria-hidden="true" />}
+                {tag.name}
+              </button>
+            );
+          })}
+          {selectedTagIds.length > 0 && (
+            <button
+              type="button"
+              className="entries-tagfilter__clear"
+              onClick={handleClearTagFilter}
+            >
               Clear
             </button>
           )}
         </div>
-        {allTags.length > 0 && (
-          <div style={{ marginBottom: "10px" }}>
-            <button onClick={() => setShowTagFilter(!showTagFilter)}>
-              {showTagFilter ? "Hide" : "Show"} tag filter
-              {selectedTagIds.length > 0 && ` (${selectedTagIds.length})`}
-            </button>
-            {showTagFilter && (
-              <div style={{ marginTop: "10px" }}>
-                {selectedTagIds.length > 0 && (
-                  <button onClick={handleClearTagFilter} style={{ marginBottom: "10px" }}>
-                    Clear all
-                  </button>
-                )}
-                <div>
-                  {allTags.map((tag) => {
-                    const isSelected = selectedTagIds.includes(tag.id);
-                    return (
-                      <button
-                        key={tag.id}
-                        onClick={() => handleToggleTag(tag.id)}
-                        style={{
-                          marginRight: "5px",
-                          marginBottom: "5px",
-                          fontWeight: isSelected ? "bold" : "normal",
-                        }}
-                      >
-                        {isSelected ? "✓ " : ""}{tag.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        <button onClick={() => setEditMode(!editMode)}>
-          {editMode ? "Exit Edit Mode" : "Edit Mode"}
-        </button>
-      </div>
+      )}
 
-      {error && <div>Error: {error}</div>}
+      {error && <div className="entries-status entries-status--error">Error: {error}</div>}
 
       {(searchQuery || selectedTagIds.length > 0) && !loading && (
-        <div
-          style={{
-            marginBottom: "10px",
-            fontSize: "14px",
-            color: "var(--secondary-color)",
-          }}
-        >
+        <div className="entries-status">
           {total === 0
             ? `No entries found${searchQuery ? ` for "${searchQuery}"` : ""}${selectedTagIds.length > 0 ? " with selected tags" : ""}`
             : `Found ${total} result${total === 1 ? "" : "s"}${searchQuery ? ` for "${searchQuery}"` : ""}${selectedTagIds.length > 0 ? ` with ${selectedTagIds.length} tag${selectedTagIds.length === 1 ? "" : "s"}` : ""}`}
@@ -340,12 +374,24 @@ export default function EntriesList() {
                               />
                               {editMode && (
                                 <div className="entry-actions">
-                                  <button onClick={() => handleEdit(entry.id)}>
+                                  <button
+                                    type="button"
+                                    className="entry-actions__btn"
+                                    onClick={() => handleEdit(entry.id)}
+                                    aria-label="Edit entry"
+                                    title="Edit entry"
+                                  >
+                                    <Pencil size={14} aria-hidden="true" />
                                     Edit
                                   </button>
                                   <button
+                                    type="button"
+                                    className="entry-actions__btn entry-actions__btn--danger"
                                     onClick={() => handleDelete(entry.id)}
+                                    aria-label="Delete entry"
+                                    title="Delete entry"
                                   >
+                                    <Trash2 size={14} aria-hidden="true" />
                                     Delete
                                   </button>
                                 </div>
@@ -362,15 +408,29 @@ export default function EntriesList() {
           )}
 
           {total > 0 && (
-            <div style={{ marginTop: "40px", textAlign: "center" }}>
-              <button onClick={handlePreviousPage} disabled={page === 1}>
-                ᐊᐊᐊ
+            <div className="entries-pagination">
+              <button
+                type="button"
+                className="entries-pagination__btn"
+                onClick={handlePreviousPage}
+                disabled={page === 1}
+                aria-label="Previous page"
+                title="Previous page"
+              >
+                <ChevronLeft size={18} aria-hidden="true" />
               </button>
-              <span style={{ margin: "0 20px" }}>
+              <span>
                 Page {page} of {Math.ceil(total / pageSize)}
               </span>
-              <button onClick={handleNextPage} disabled={!hasMore}>
-                ᐅᐅᐅ
+              <button
+                type="button"
+                className="entries-pagination__btn"
+                onClick={handleNextPage}
+                disabled={!hasMore}
+                aria-label="Next page"
+                title="Next page"
+              >
+                <ChevronRight size={18} aria-hidden="true" />
               </button>
             </div>
           )}
