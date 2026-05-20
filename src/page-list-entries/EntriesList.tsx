@@ -43,6 +43,8 @@ export default function EntriesList() {
   const pageSize = 10;
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const scrollParentRef = useRef<HTMLElement | Window | null>(null);
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(false);
   const pageRef = useRef(1);
@@ -157,18 +159,44 @@ export default function EntriesList() {
     return () => observer.disconnect();
   }, [loadMore, entries.length]);
 
-  // Back-to-top visibility on scroll
+  // Find the actual scroll container and listen for scroll on any ancestor
   useEffect(() => {
-    const onScroll = () => {
-      setShowBackToTop(window.scrollY > 400);
+    const findScrollParent = (el: HTMLElement | null): HTMLElement | Window => {
+      let node = el?.parentElement ?? null;
+      while (node) {
+        const style = getComputedStyle(node);
+        if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight) {
+          return node;
+        }
+        node = node.parentElement;
+      }
+      return window;
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
+
+    const onScroll = (e: Event) => {
+      const t = e.target as Document | HTMLElement;
+      const el = t instanceof Document ? document.scrollingElement as HTMLElement : t;
+      if (!el) return;
+      if (!scrollParentRef.current) {
+        scrollParentRef.current = findScrollParent(containerRef.current);
+      }
+      const y = "scrollTop" in el ? el.scrollTop : window.scrollY;
+      setShowBackToTop(y > 200);
+    };
+
+    scrollParentRef.current = findScrollParent(containerRef.current);
+    document.addEventListener("scroll", onScroll, { passive: true, capture: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true } as EventListenerOptions);
   }, []);
 
   const handleBackToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const target = scrollParentRef.current;
+    if (!target) return;
+    if (target === window) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      (target as HTMLElement).scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -271,7 +299,7 @@ export default function EntriesList() {
   };
 
   return (
-    <div className="page-container">
+    <div className="page-container" ref={containerRef}>
       <div className="entries-toolbar">
         <div className="entries-toolbar__search">
           <span className="entries-toolbar__search-icon">
