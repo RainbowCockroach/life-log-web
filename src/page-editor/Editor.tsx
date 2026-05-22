@@ -222,6 +222,7 @@ export default function Editor({ entryId, onSaveSuccess }: EditorProps) {
 
         if (response.success) {
           setSuccessMessage(`${response.message} (ID: ${response.id})`);
+          setContent("");
           setUploadedImagePaths([]);
           setLocationTag(null);
           setSelectedTags([]);
