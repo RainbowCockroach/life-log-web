@@ -1,5 +1,14 @@
 import { useState } from "react";
+import {
+  FileDown,
+  Calendar,
+  CircleAlert,
+  Loader2,
+  FileText,
+  QrCode,
+} from "lucide-react";
 import { exportPdf } from "../services/api";
+import "./ExportPage.css";
 
 function ExportPage() {
   const today = new Date().toISOString().split("T")[0];
@@ -28,8 +37,6 @@ function ExportPage() {
 
     try {
       const blob = await exportPdf(startDate, endDate);
-
-      // Trigger download
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -46,51 +53,90 @@ function ExportPage() {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "500px" }}>
-      <h1>Export to PDF</h1>
-      <p>Select a date range to export your diary entries as printable PDFs.</p>
+    <div className="page-container export-page">
+      <header className="export-page__header">
+        <h1 className="export-page__title">
+          <FileDown size={20} aria-hidden />
+          Export to PDF
+        </h1>
+        <p className="export-page__lede">Printable PDF of entries in a date range.</p>
+      </header>
 
-      {error && (
-        <div style={{ color: "#dc2626", marginBottom: "16px" }}>{error}</div>
-      )}
+      <section className="export-card">
+        <div className="export-card__row">
+          <div className="export-card__field">
+            <label className="export-card__label" htmlFor="export-start">
+              <Calendar size={12} aria-hidden />
+              Start date
+            </label>
+            <input
+              id="export-start"
+              type="date"
+              className="export-card__input"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              max={endDate}
+            />
+          </div>
 
-      <div style={{ marginBottom: "16px" }}>
-        <label style={{ display: "block", marginBottom: "4px" }}>
-          Start Date
-        </label>
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          max={endDate}
-        />
-      </div>
+          <div className="export-card__field">
+            <label className="export-card__label" htmlFor="export-end">
+              <Calendar size={12} aria-hidden />
+              End date
+            </label>
+            <input
+              id="export-end"
+              type="date"
+              className="export-card__input"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate}
+              max={today}
+            />
+          </div>
+        </div>
 
-      <div style={{ marginBottom: "16px" }}>
-        <label style={{ display: "block", marginBottom: "4px" }}>
-          End Date
-        </label>
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          min={startDate}
-          max={today}
-        />
-      </div>
+        {error && (
+          <div className="export-page__message export-page__message--error" role="alert">
+            <CircleAlert size={14} aria-hidden />
+            {error}
+          </div>
+        )}
 
-      <button onClick={handleExport} disabled={isExporting}>
-        {isExporting ? "Exporting..." : "Export PDF"}
-      </button>
+        <div className="export-card__actions">
+          <button
+            type="button"
+            className="export-btn export-btn--primary"
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <>
+                <Loader2 size={14} aria-hidden className="export-btn__spin" />
+                Exporting…
+              </>
+            ) : (
+              <>
+                <FileDown size={14} aria-hidden />
+                Export PDF
+              </>
+            )}
+          </button>
+        </div>
+      </section>
 
-      <div style={{ marginTop: "24px", fontSize: "14px", opacity: 0.7 }}>
-        <p>The export will generate:</p>
-        <ul>
-          <li>Single PDF with all entries (A5 format, ready for printing)</li>
-          <li>Two-column layout for space-efficient printing</li>
-          <li>Includes entries, tags, locations, images, and QR codes for links</li>
+      <section className="export-info" aria-label="Export format">
+        <ul className="export-info__list">
+          <li className="export-info__item">
+            <FileText size={14} aria-hidden />
+            A5, two columns
+          </li>
+          <li className="export-info__item">
+            <QrCode size={14} aria-hidden />
+            QR codes for links
+          </li>
         </ul>
-      </div>
+      </section>
     </div>
   );
 }
