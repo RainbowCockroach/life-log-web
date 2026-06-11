@@ -1,5 +1,5 @@
 import { useState, useRef, type ChangeEvent, useEffect } from "react";
-import { ImagePlus, Link2, Save, Loader2 } from "lucide-react";
+import { ImagePlus, Camera, Link2, Save, Loader2 } from "lucide-react";
 
 interface MarkdownEditorProps {
   initialValue?: string;
@@ -30,6 +30,7 @@ export default function MarkdownEditor({
   const [content, setContent] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const lastInitialValue = useRef(initialValue);
 
   useEffect(() => {
@@ -178,6 +179,14 @@ export default function MarkdownEditor({
           onChange={handleImageUpload}
           style={{ display: "none" }}
         />
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleImageUpload}
+          style={{ display: "none" }}
+        />
         <button
           type="button"
           className="ed-btn ed-btn--icon"
@@ -186,6 +195,15 @@ export default function MarkdownEditor({
           aria-label="Insert image"
         >
           <ImagePlus size={ICON_SIZE} />
+        </button>
+        <button
+          type="button"
+          className="ed-btn ed-btn--icon"
+          onClick={() => cameraInputRef.current?.click()}
+          title="Take photo"
+          aria-label="Take photo"
+        >
+          <Camera size={ICON_SIZE} />
         </button>
         <button
           type="button"
